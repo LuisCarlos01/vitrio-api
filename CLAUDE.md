@@ -15,6 +15,21 @@ herdados do projeto de origem devem ser revisados e ajustados à realidade deste
 antes do commit — nunca citar uma ADR, issue ou versão que não existe neste
 repositório.
 
+## Tickets
+
+Tickets (`to-tickets`) são sempre publicados como Issues nativas do GitHub — nunca como
+arquivos locais em `.scratch/` — usando as dependências nativas de bloqueio do GitHub
+entre elas (não uma lista numerada em texto). Toda issue criada por `to-tickets` também
+entra num GitHub Project deste repositório.
+
+Título, corpo, labels e milestones de issues/PRs são em PT-BR (ver `docs/agents/
+triage-labels.md` para os labels de triage). Exceção: **tópicos do repositório**
+(GitHub topics, ex. `java`, `spring-boot`, `postgresql`) ficam em inglês — são
+taxonomia técnica padrão do GitHub usada pra descoberta entre repositórios, traduzir
+prejudica isso sem ganho real.
+
+Toda issue criada neste repositório é atribuída a `LuisCarlos01` (único mantenedor).
+
 ## Agent skills
 
 ### Issue tracker
