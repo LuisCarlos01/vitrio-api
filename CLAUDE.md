@@ -15,6 +15,14 @@ herdados do projeto de origem devem ser revisados e ajustados à realidade deste
 antes do commit — nunca citar uma ADR, issue ou versão que não existe neste
 repositório.
 
+## Fluxo de uma spec
+
+Ordem fixa, nesta sequência: `spec.md` em `specs/` → `/to-tickets` quebra a spec em
+issues **antes de qualquer código ser escrito** → implementação → `code-review`
+(seção "Antes de commitar") → commit → fechar cada issue referenciando o commit que a
+entregou. Tickets não nascem retroativos — a etapa de `/to-tickets` acontece logo
+após a spec ser aprovada, não depois da implementação já pronta.
+
 ## Tickets
 
 Tickets (`to-tickets`) são sempre publicados como Issues nativas do GitHub — nunca como
