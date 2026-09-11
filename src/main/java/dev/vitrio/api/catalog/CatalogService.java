@@ -1,5 +1,6 @@
 package dev.vitrio.api.catalog;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -30,10 +31,39 @@ public class CatalogService {
 
     @Transactional(readOnly = true)
     public CatalogResponse getMine(UUID ownerId, UUID id) {
-        Catalog catalog = catalogRepository
-                .findByIdAndOwnerId(id, ownerId)
-                .orElseThrow(CatalogNotFoundException::new);
+        return CatalogResponse.from(findOwnedOrThrow(ownerId, id));
+    }
+
+    @Transactional
+    public CatalogResponse update(UUID ownerId, UUID id, UpdateCatalogRequest request) {
+        Catalog catalog = findOwnedOrThrow(ownerId, id);
+        catalog.applyPersonalization(
+                request.name(), request.primaryColorHex(), request.buttonColorHex(), request.instagramHandle());
         return CatalogResponse.from(catalog);
+    }
+
+    @Transactional
+    public CatalogResponse updateWhatsapp(UUID ownerId, UUID id, UpdateWhatsappRequest request) {
+        Catalog catalog = findOwnedOrThrow(ownerId, id);
+        catalog.updateWhatsappNumber(WhatsappNumberNormalizer.normalize(request.whatsappNumber()));
+        return CatalogResponse.from(catalog);
+    }
+
+    @Transactional
+    public CatalogResponse verifyWhatsapp(UUID ownerId, UUID id) {
+        Catalog catalog = findOwnedOrThrow(ownerId, id);
+        if (catalog.getWhatsappNumber() == null) {
+            throw new WhatsappNumberNotConfiguredException();
+        }
+        catalog.verifyWhatsapp(Instant.now());
+        return CatalogResponse.from(catalog);
+    }
+
+    // Único ponto de isolamento (ADR-0003): "não existe" e "existe mas não é meu" chegam aqui
+    // pela mesma query e viram a mesma exceção — reaproveitado por toda leitura/escrita que
+    // opera sobre um catálogo específico por id.
+    private Catalog findOwnedOrThrow(UUID ownerId, UUID id) {
+        return catalogRepository.findByIdAndOwnerId(id, ownerId).orElseThrow(CatalogNotFoundException::new);
     }
 
     // Verifica-então-insere: aceitável na escala deste projeto (sem cadastro concorrente de

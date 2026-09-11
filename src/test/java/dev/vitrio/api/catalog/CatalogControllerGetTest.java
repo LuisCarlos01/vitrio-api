@@ -1,16 +1,13 @@
 package dev.vitrio.api.catalog;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import dev.vitrio.api.auth.AbstractAuthIntegrationTest;
 import dev.vitrio.api.auth.LoginResponse;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.junit.jupiter.Container;
@@ -18,9 +15,9 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * Teste de integração ponta a ponta de {@code GET /api/v1/catalogs/{id}} (spec 001, US4 —
- * isolamento entre revendedoras, ADR-0003). Ver {@link AbstractAuthIntegrationTest}.
+ * isolamento entre revendedoras, ADR-0003). Ver {@link AbstractCatalogIntegrationTest}.
  */
-class CatalogControllerGetTest extends AbstractAuthIntegrationTest {
+class CatalogControllerGetTest extends AbstractCatalogIntegrationTest {
 
     @Container
     static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine");
@@ -68,16 +65,5 @@ class CatalogControllerGetTest extends AbstractAuthIntegrationTest {
     @Test
     void unauthenticatedRequestIsUnauthorized() throws Exception {
         mockMvc.perform(get("/api/v1/catalogs/" + UUID.randomUUID())).andExpect(status().isUnauthorized());
-    }
-
-    private String createCatalogAndGetId(LoginResponse loginResponse, String name) throws Exception {
-        String body = mockMvc.perform(post("/api/v1/catalogs")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginResponse.accessToken())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonMapper.writeValueAsString(new CreateCatalogRequest(name))))
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-        return jsonMapper.readValue(body, CatalogResponse.class).id().toString();
     }
 }

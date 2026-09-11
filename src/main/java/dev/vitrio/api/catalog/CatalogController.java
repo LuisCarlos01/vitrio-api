@@ -7,8 +7,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -39,6 +41,23 @@ public class CatalogController {
     @GetMapping("/{id}")
     public CatalogResponse get(@PathVariable UUID id, Authentication authentication) {
         return catalogService.getMine(ownerId(authentication), id);
+    }
+
+    @PatchMapping("/{id}")
+    public CatalogResponse update(
+            @PathVariable UUID id, @Valid @RequestBody UpdateCatalogRequest request, Authentication authentication) {
+        return catalogService.update(ownerId(authentication), id, request);
+    }
+
+    @PutMapping("/{id}/whatsapp")
+    public CatalogResponse updateWhatsapp(
+            @PathVariable UUID id, @Valid @RequestBody UpdateWhatsappRequest request, Authentication authentication) {
+        return catalogService.updateWhatsapp(ownerId(authentication), id, request);
+    }
+
+    @PostMapping("/{id}/whatsapp/verify")
+    public CatalogResponse verifyWhatsapp(@PathVariable UUID id, Authentication authentication) {
+        return catalogService.verifyWhatsapp(ownerId(authentication), id);
     }
 
     private UUID ownerId(Authentication authentication) {

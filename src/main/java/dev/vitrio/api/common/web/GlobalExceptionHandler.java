@@ -4,6 +4,8 @@ import dev.vitrio.api.auth.EmailAlreadyRegisteredException;
 import dev.vitrio.api.auth.InvalidCredentialsException;
 import dev.vitrio.api.auth.InvalidRefreshTokenException;
 import dev.vitrio.api.catalog.CatalogNotFoundException;
+import dev.vitrio.api.catalog.InvalidWhatsappNumberException;
+import dev.vitrio.api.catalog.WhatsappNumberNotConfiguredException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -47,6 +49,20 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleCatalogNotFound(CatalogNotFoundException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
         problemDetail.setTitle("Catalog not found");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(InvalidWhatsappNumberException.class)
+    public ProblemDetail handleInvalidWhatsappNumber(InvalidWhatsappNumberException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problemDetail.setTitle("Invalid WhatsApp number");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(WhatsappNumberNotConfiguredException.class)
+    public ProblemDetail handleWhatsappNumberNotConfigured(WhatsappNumberNotConfiguredException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problemDetail.setTitle("WhatsApp number not configured");
         return problemDetail;
     }
 
