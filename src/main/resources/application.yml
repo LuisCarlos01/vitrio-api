@@ -1,0 +1,60 @@
+server:
+  # Sem isso, request.getRemoteAddr() (usado pelo LoginRateLimitFilter e pelo
+  # RegisterRateLimitFilter) vê o IP do proxy reverso, não o do cliente real — todo tráfego
+  # externo compartilharia um único bucket de IP, quebrando a proteção por atacante. O proxy
+  # já envia X-Forwarded-For por padrão; isso só faz o Spring confiar e usar esse valor.
+  forward-headers-strategy: framework
+
+spring:
+  application:
+    name: vitrio-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/vitrio}
+    username: ${DB_USER:vitrio}
+    password: ${DB_PASSWORD:vitrio}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+
+vitrio:
+  jwt:
+    # Chave de assinatura HS256 do Access token — sempre via variável de ambiente,
+    # nunca hardcoded nem commitada (ver .env.example para o default de desenvolvimento).
+    signing-key: ${JWT_SIGNING_KEY}
+    access-token-ttl-minutes: 15
+    refresh-token-ttl-days: 7
+    # Frequência do job de limpeza de Refresh tokens expirados (RefreshTokenCleanupJob).
+    # 24h: baixa frequência é suficiente — a única consequência de um atraso é uma linha
+    # expirada sobrevivendo um pouco mais no banco, sem risco de segurança.
+    refresh-token-cleanup-interval-ms: 86400000
+  rate-limit:
+    # Rate limiting em login, por bucket (IP e e-mail, mesma capacidade para os dois).
+    # Configurável via env var para permitir um valor bem mais alto especificamente no teste de
+    # carga (Gatling, docker-compose.loadtest.yml) — o load test do fluxo de auth roda de uma
+    # única máquina, todas as requisições saem do mesmo IP de origem, então o bucket por IP
+    # (o de e-mail não é problema, já que a simulação varia e-mail por usuário virtual)
+    # derrubaria a simulação bem antes de medir a performance real do fluxo.
+    login-capacity: ${VITRIO_RATE_LIMIT_LOGIN_CAPACITY:5}
+    login-window-seconds: ${VITRIO_RATE_LIMIT_LOGIN_WINDOW_SECONDS:60}
+    # Rate limiting em /register, só por IP — endpoint é público (ADR-0002), sem esse limite
+    # qualquer um poderia automatizar criação de contas em massa. Mesma janela do login (60s),
+    # mas com o dobro da capacidade (10 vs. 5) — comprovadamente mais permissivo que login em
+    # qualquer leitura direta desta config (spec 001), já que registro legítimo pode vir em
+    # rajada (ex.: várias pessoas atrás do mesmo IP/NAT se cadastrando na mesma janela).
+    register-capacity: ${VITRIO_RATE_LIMIT_REGISTER_CAPACITY:10}
+    register-window-seconds: ${VITRIO_RATE_LIMIT_REGISTER_WINDOW_SECONDS:60}
+  cors:
+    # Lista de origens permitidas, separadas por vírgula (dev + produção do vitrio-web).
+    # Sem default: o frontend ainda não tem porta/domínio decidido, então falhar fechado
+    # (nenhuma origem permitida) é mais seguro que chutar uma porta comum (5173/3000) que pode
+    # nem ser a real. Configurar via VITRIO_CORS_ALLOWED_ORIGINS assim que a porta for definida.
+    allowed-origins: ${VITRIO_CORS_ALLOWED_ORIGINS:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

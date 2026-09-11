@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.0</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>dev.vitrio</groupId>
+    <artifactId>vitrio-api</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>vitrio-api</name>
+    <description>Backend do Vitrio — catálogo digital multi-tenant para revendedoras, com autenticação JWT reaproveitada do sentinel-auth-api.</description>
+
+    <properties>
+        <java.version>25</java.version>
+        <jjwt.version>0.13.0</jjwt.version>
+        <springdoc.version>3.1.0</springdoc.version>
+        <bucket4j.version>8.14.0</bucket4j.version>
+        <caffeine.version>3.2.0</caffeine.version>
+        <jacoco.version>0.8.15</jacoco.version>
+        <!-- Override do BOM do Spring Boot (que gerencia pra 42.7.11) — CVE-2026-53712/CVE-2026-42198,
+             fixadas em 42.7.12+ (auditoria de segurança, achado #5). -->
+        <postgresql.version>42.7.13</postgresql.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Argon2PasswordEncoder (spring-security-crypto) delega a implementação do Argon2id
+             para o BouncyCastle em tempo de execução; sem essa dependência, encode()/matches()
+             lançam NoClassDefFoundError assim que são chamados, mesmo com o bean configurado
+             com sucesso. Não é gerenciada pelo BOM do Spring Boot, por isso a versão é fixada
+             manualmente. -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <!-- 1.86: CVE-2026-0636 (LDAP injection) e CVE-2026-5598, fixadas em 1.84+ — não
+                 exploráveis aqui (sem uso de LDAP/FrodoKEM), upgrade por precaução de qualquer
+                 forma (auditoria de segurança, achado #4). -->
+            <version>1.86</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Spring Boot 4 dividiu a autoconfiguração em módulos por tecnologia: sem
+             spring-boot-flyway, a autoconfiguração do Flyway não é sequer considerada,
+             mesmo com flyway-core no classpath. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-flyway</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+
+        <!-- jjwt: fora do BOM do Spring Boot, versão fixada manualmente -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
+        </dependency>
+
+        <!-- Bucket4j: fora do BOM do Spring Boot, versão fixada manualmente (ADR-0010).
+             Só bucket4j_jdk17-core (Bucket local, sem ProxyManager distribuído — não usamos
+             o módulo bucket4j_jdk17-caffeine: seu ProxyManager existe para preparar troca
+             futura por um backend distribuído, que não é o cenário deste projeto — instância
+             única). Caffeine puro (Cache<String, Bucket>) já resolve a eviction automática. -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j_jdk17-core</artifactId>
+            <version>${bucket4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>${caffeine.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Spring Boot 4 quebrou o antigo spring-boot-test-autoconfigure monolítico em módulos por
+             slice de teste; @WebMvcTest/@AutoConfigureMockMvc agora vivem aqui, não mais em
+             spring-boot-starter-test transitivamente. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- JaCoCo: fora do BOM do Spring Boot, versão fixada manualmente. 0.8.15 é a
+                 primeira a listar suporte oficial ao bytecode gerado pelo Java 26 e mantém o
+                 suporte oficial ao Java 25 (adicionado na 0.8.14) — confirmado no changelog
+                 oficial, não pela versão sugerida pelo Context7. Apenas medição/relatório:
+                 jacoco:check deliberadamente omitido, sem threshold de cobertura definido
+                 em nenhum documento do projeto (ver docs/technologies/jacoco.md). -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <!-- Teste de carga (Gatling, ticket #21) — deliberadamente fora do build padrão
+             (`mvn clean verify` sem este profile continua no mesmo tempo de sempre). Disparo:
+             `mvn verify -P load-test` (ou `mvn gatling:test -P load-test`), com a aplicação já
+             subida via `docker compose -f docker-compose.yml -f docker-compose.loadtest.yml up`
+             (não Testcontainers — precisa de uma instância estável, não efêmera). Versões
+             confirmadas no projeto de demonstração oficial do Gatling
+             (github.com/gatling/gatling-maven-plugin-demo-java/blob/main/pom.xml), já que o
+             Context7 não retornou um número de versão único e confiável (ver
+             docs/technologies/gatling.md) — não pela sugestão do Context7. -->
+        <profile>
+            <id>load-test</id>
+            <properties>
+                <gatling.version>3.15.1</gatling.version>
+                <gatling-maven-plugin.version>4.21.10</gatling-maven-plugin.version>
+                <build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>io.gatling.highcharts</groupId>
+                    <artifactId>gatling-charts-highcharts</artifactId>
+                    <version>${gatling.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <!-- gatling-maven-plugin roda sobre as classes já compiladas de teste
+                         (fase test-compile) — este plugin registra src/test/gatling/java como
+                         diretório de teste adicional, mantendo as simulações fora de
+                         src/test/java (separado dos testes JUnit/Testcontainers). -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>${build-helper-maven-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>add-gatling-test-source</id>
+                                <phase>generate-test-sources</phase>
+                                <goals>
+                                    <goal>add-test-source</goal>
+                                </goals>
+                                <configuration>
+                                    <sources>
+                                        <source>src/test/gatling/java</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>io.gatling</groupId>
+                        <artifactId>gatling-maven-plugin</artifactId>
+                        <version>${gatling-maven-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+</project>
