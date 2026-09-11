@@ -185,11 +185,16 @@ JWT/refresh token é reaproveitado como está. É single-tenant (só `User`+`Rol
 sem conceito de organização) — o Vitrio adiciona `Catalog.ownerId` por cima. Cadastro
 público já existe lá e é mantido aberto no Vitrio (decisão consciente, ver acima).
 
-## Perguntas abertas
-- Onde hospedar imagens (provedor de storage free tier — Cloudflare R2, Backblaze B2,
-  S3 free tier, Supabase Storage — avaliar limites de banda/armazenamento grátis e
-  compatibilidade com SDK S3 do Spring) e onde hospedar o backend Java (free tier a
-  pesquisar; frontend já definido na Vercel).
+## Infraestrutura (decidido)
+- **Storage de imagens**: AWS S3 (free tier), aproveitando crédito já disponível na
+  conta AWS do mantenedor.
+- **Backend**: nova instância EC2 dedicada ao `vitrio-api`, separada da instância que
+  já roda o `sentinel-auth-api` (não é reaproveitada/derrubada — os dois projetos
+  continuam no ar em paralelo). Atenção: o free tier de EC2 (750h/mês) é por conta,
+  não por instância — rodando duas instâncias simultâneas, o limite grátis se esgota
+  mais rápido; verificar saldo restante no console da AWS antes de assumir que as
+  duas ficam sem custo.
+- Frontend já definido na Vercel (decisão anterior, sem mudança).
 
 ## Próximo passo
 Criar os repositórios `vitrio-api` (Java/Spring, reaproveitando `sentinel-auth-api`
