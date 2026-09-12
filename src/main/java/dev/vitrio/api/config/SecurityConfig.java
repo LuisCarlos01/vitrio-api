@@ -83,7 +83,11 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info")
                         .permitAll()
-                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**")
+                        // "/v3/api-docs/**" cobre "/v3/api-docs" e subcaminhos, mas não
+                        // "/v3/api-docs.yaml" (sufixo, não subcaminho — limite de segmento
+                        // diferente) — listado à parte para a variante YAML do contrato
+                        // (docs/api/openapi.yaml) também ficar acessível sem token.
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/v3/api-docs.yaml")
                         .permitAll()
                         .requestMatchers("/api/v1/users")
                         .hasRole("ADMIN")

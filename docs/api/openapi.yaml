@@ -1,0 +1,925 @@
+openapi: 3.1.0
+info:
+  title: Vitrio API
+  description: Backend do Vitrio — catálogo digital multi-tenant para revendedoras.
+  version: v1
+servers:
+- url: http://localhost:8080
+  description: Generated server url
+paths:
+  /api/v1/catalogs/{id}/whatsapp:
+    put:
+      tags:
+      - catalog-controller
+      operationId: updateWhatsapp
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWhatsappRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CatalogResponse"
+  /api/v1/catalogs:
+    get:
+      tags:
+      - catalog-controller
+      operationId: list
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CatalogResponse"
+    post:
+      tags:
+      - catalog-controller
+      operationId: create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCatalogRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CatalogResponse"
+  /api/v1/catalogs/{id}/whatsapp/verify:
+    post:
+      tags:
+      - catalog-controller
+      operationId: verifyWhatsapp
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CatalogResponse"
+  /api/v1/catalogs/{catalogId}/products:
+    get:
+      tags:
+      - product-controller
+      operationId: list_1
+      parameters:
+      - name: catalogId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductResponse"
+    post:
+      tags:
+      - product-controller
+      operationId: create_1
+      parameters:
+      - name: catalogId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+  /api/v1/catalogs/{catalogId}/products/import/preview:
+    post:
+      tags:
+      - csv-import-controller
+      operationId: preview
+      parameters:
+      - name: catalogId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CsvImportPreviewResponse"
+  /api/v1/catalogs/{catalogId}/products/import/confirm:
+    post:
+      tags:
+      - csv-import-controller
+      operationId: confirm
+      parameters:
+      - name: catalogId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CsvImportConfirmResponse"
+  /api/v1/catalogs/{catalogId}/categories:
+    get:
+      tags:
+      - category-controller
+      operationId: list_2
+      parameters:
+      - name: catalogId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategoryResponse"
+    post:
+      tags:
+      - category-controller
+      operationId: create_2
+      parameters:
+      - name: catalogId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCategoryRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CategoryResponse"
+  /api/v1/catalogs/{catalogId}/assets:
+    post:
+      tags:
+      - asset-controller
+      operationId: upload
+      parameters:
+      - name: catalogId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AssetResponse"
+  /api/v1/auth/register:
+    post:
+      tags:
+      - auth-controller
+      operationId: register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/RegisterResponse"
+  /api/v1/auth/refresh:
+    post:
+      tags:
+      - auth-controller
+      operationId: refresh
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+  /api/v1/auth/logout:
+    post:
+      tags:
+      - auth-controller
+      operationId: logout
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogoutRequest"
+      responses:
+        "200":
+          description: OK
+  /api/v1/auth/login:
+    post:
+      tags:
+      - auth-controller
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+  /api/v1/catalogs/{id}:
+    get:
+      tags:
+      - catalog-controller
+      operationId: get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CatalogResponse"
+    patch:
+      tags:
+      - catalog-controller
+      operationId: update
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCatalogRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CatalogResponse"
+  /api/v1/catalogs/{catalogId}/products/{id}:
+    get:
+      tags:
+      - product-controller
+      operationId: get_1
+      parameters:
+      - name: catalogId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+    delete:
+      tags:
+      - product-controller
+      operationId: delete
+      parameters:
+      - name: catalogId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+    patch:
+      tags:
+      - product-controller
+      operationId: update_1
+      parameters:
+      - name: catalogId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProductRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+  /api/v1/catalogs/{catalogId}/categories/{id}:
+    delete:
+      tags:
+      - category-controller
+      operationId: delete_1
+      parameters:
+      - name: catalogId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+    patch:
+      tags:
+      - category-controller
+      operationId: rename
+      parameters:
+      - name: catalogId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCategoryRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CategoryResponse"
+  /api/v1/users:
+    get:
+      tags:
+      - user-controller
+      operationId: listUsers
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserSummaryResponse"
+  /api/v1/public/catalogs/{slug}:
+    get:
+      tags:
+      - public-catalog-controller
+      operationId: getBySlug
+      parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PublicCatalogResponse"
+components:
+  schemas:
+    UpdateWhatsappRequest:
+      type: object
+      properties:
+        whatsappNumber:
+          type: string
+          minLength: 1
+      required:
+      - whatsappNumber
+    CatalogResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        primaryColorHex:
+          type: string
+        buttonColorHex:
+          type: string
+        instagramHandle:
+          type: string
+        whatsappNumber:
+          type: string
+        whatsappVerificationStatus:
+          type: string
+          enum:
+          - UNVERIFIED
+          - VERIFIED
+        whatsappVerifiedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    CreateCatalogRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          minLength: 0
+      required:
+      - name
+    CreateProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          minLength: 0
+        sku:
+          type: string
+          maxLength: 255
+          minLength: 0
+        description:
+          type: string
+          maxLength: 2000
+          minLength: 0
+        imageAssetId:
+          type: string
+          format: uuid
+        categoryId:
+          type: string
+          format: uuid
+      required:
+      - imageAssetId
+      - name
+    ProductResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        catalogId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        sku:
+          type: string
+        description:
+          type: string
+        imageAssetId:
+          type: string
+          format: uuid
+        categoryId:
+          type: string
+          format: uuid
+        quantityAvailable:
+          type: integer
+          format: int32
+        isVisible:
+          type: boolean
+        isOrderable:
+          type: boolean
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    CsvImportPreviewResponse:
+      type: object
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/CsvImportRowResult"
+    CsvImportRowResult:
+      type: object
+      properties:
+        lineNumber:
+          type: integer
+          format: int32
+        name:
+          type: string
+        sku:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: string
+        errors:
+          type: array
+          items:
+            type: string
+        valid:
+          type: boolean
+    CsvImportConfirmResponse:
+      type: object
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/CsvImportConfirmRowResult"
+    CsvImportConfirmRowResult:
+      type: object
+      properties:
+        lineNumber:
+          type: integer
+          format: int32
+        name:
+          type: string
+        sku:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: string
+        productId:
+          type: string
+          format: uuid
+        errors:
+          type: array
+          items:
+            type: string
+        valid:
+          type: boolean
+    CreateCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          minLength: 0
+      required:
+      - name
+    CategoryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        catalogId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    AssetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        catalogId:
+          type: string
+          format: uuid
+        contentType:
+          type: string
+        byteSize:
+          type: integer
+          format: int64
+        publicUrl:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          minLength: 0
+        password:
+          type: string
+          maxLength: 2147483647
+          minLength: 8
+      required:
+      - email
+      - password
+    RegisterResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+        expiresIn:
+          type: integer
+          format: int64
+    RefreshRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+        expiresIn:
+          type: integer
+          format: int64
+    LogoutRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          maxLength: 2147483647
+          minLength: 8
+      required:
+      - email
+      - password
+    UpdateCatalogRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          minLength: 0
+        primaryColorHex:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        buttonColorHex:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        instagramHandle:
+          type: string
+          maxLength: 255
+          minLength: 0
+    UpdateProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          minLength: 0
+        sku:
+          type: string
+          maxLength: 255
+          minLength: 0
+        description:
+          type: string
+          maxLength: 2000
+          minLength: 0
+        imageAssetId:
+          type: string
+          format: uuid
+        categoryId:
+          type: string
+          format: uuid
+        quantityAvailable:
+          type: integer
+          format: int32
+          minimum: 0
+        isVisible:
+          type: boolean
+        isOrderable:
+          type: boolean
+        isActive:
+          type: boolean
+    UpdateCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          minLength: 0
+      required:
+      - name
+    UserSummaryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    PublicCatalogResponse:
+      type: object
+      properties:
+        name:
+          type: string
+        primaryColorHex:
+          type: string
+        buttonColorHex:
+          type: string
+        instagramHandle:
+          type: string
+        whatsappNumber:
+          type: string
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicCategoryResponse"
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicProductResponse"
+    PublicCategoryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    PublicProductResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        sku:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: string
+        categoryId:
+          type: string
+          format: uuid
+        quantityAvailable:
+          type: integer
+          format: int32
+        isOrderable:
+          type: boolean

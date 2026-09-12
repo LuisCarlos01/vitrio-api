@@ -41,4 +41,9 @@ class PublicEndpointsSecurityTest extends AbstractAuthIntegrationTest {
     void apiDocsArePubliclyAccessibleWithoutAuthentication() throws Exception {
         mockMvc.perform(get("/v3/api-docs")).andExpect(status().isOk());
     }
+
+    @Test
+    void apiDocsYamlVariantIsPubliclyAccessibleWithoutAuthentication() throws Exception {
+        mockMvc.perform(get("/v3/api-docs.yaml")).andExpect(status().isOk());
+    }
 }
