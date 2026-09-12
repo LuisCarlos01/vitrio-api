@@ -1,6 +1,7 @@
 package dev.vitrio.api.product;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -64,6 +65,32 @@ class ProductControllerReadTest extends AbstractProductIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginResponse.accessToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
+    void listingReturnsProductsRegardlessOfState() throws Exception {
+        LoginResponse loginResponse = registerAndLogin("read-product-5@example.com", "Str0ngP@ssw0rd!");
+        String catalogId = createCatalogAndGetId(loginResponse, "Catalogo Leitura 5");
+        String assetId = createAssetAndGetId(loginResponse, catalogId);
+
+        String defaultStateId = createProduct(loginResponse, catalogId, "Produto Padrao", assetId);
+        String visibleOrderableId = createProduct(loginResponse, catalogId, "Produto Visivel", assetId);
+        mockMvc.perform(patch("/api/v1/catalogs/{catalogId}/products/{id}", catalogId, visibleOrderableId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginResponse.accessToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"isVisible\": true, \"isOrderable\": true}"));
+        String inactiveId = createProduct(loginResponse, catalogId, "Produto Inativo", assetId);
+        mockMvc.perform(patch("/api/v1/catalogs/{catalogId}/products/{id}", catalogId, inactiveId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginResponse.accessToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"isActive\": false}"));
+
+        mockMvc.perform(get("/api/v1/catalogs/{catalogId}/products", catalogId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginResponse.accessToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$[*].id", org.hamcrest.Matchers.containsInAnyOrder(
+                        defaultStateId, visibleOrderableId, inactiveId)));
     }
 
     @Test

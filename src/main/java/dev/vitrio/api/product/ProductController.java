@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -39,6 +40,15 @@ public class ProductController {
     @GetMapping("/{id}")
     public ProductResponse get(@PathVariable UUID catalogId, @PathVariable UUID id, Authentication authentication) {
         return productService.getOne(ownerId(authentication), catalogId, id);
+    }
+
+    @PatchMapping("/{id}")
+    public ProductResponse update(
+            @PathVariable UUID catalogId,
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateProductRequest request,
+            Authentication authentication) {
+        return productService.update(ownerId(authentication), catalogId, id, request);
     }
 
     private UUID ownerId(Authentication authentication) {

@@ -16,4 +16,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     long countByCatalogId(UUID catalogId);
 
     boolean existsByCatalogIdAndSku(UUID catalogId, String sku);
+
+    // Usado no PATCH (US3): um produto não colide consigo mesmo ao manter o próprio sku.
+    boolean existsByCatalogIdAndSkuAndIdNot(UUID catalogId, String sku, UUID id);
 }
