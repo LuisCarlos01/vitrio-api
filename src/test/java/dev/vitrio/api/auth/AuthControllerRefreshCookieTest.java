@@ -49,7 +49,7 @@ class AuthControllerRefreshCookieTest extends AbstractAuthIntegrationTest {
                 .andExpect(cookie().secure("refreshToken", true))
                 .andExpect(cookie().path("refreshToken", "/api/v1/auth"))
                 .andExpect(cookie().maxAge("refreshToken", 7 * 24 * 3600))
-                .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("SameSite=Strict")))
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("SameSite=None")))
                 .andExpect(jsonPath("$.refreshToken", org.hamcrest.Matchers.notNullValue()));
     }
 

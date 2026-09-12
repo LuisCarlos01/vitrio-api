@@ -21,7 +21,13 @@ final class RefreshTokenCookie {
         return ResponseCookie.from(NAME, rawRefreshToken)
                 .httpOnly(true)
                 .secure(true)
-                .sameSite("Strict")
+                // None (não Strict): vitrio-web e a API vivem em domínios diferentes
+                // (cross-site) — com Strict o navegador nunca reenvia o cookie pro backend.
+                // Exige Secure (já setado acima). CORS com allowlist de origem (não wildcard)
+                // é quem segura o CSRF que isso reabre: um POST forjado de fora da allowlist
+                // ainda dispara /refresh ou /logout (rotaciona/revoga o token da vítima), mas
+                // a origem maliciosa nunca consegue ler a resposta.
+                .sameSite("None")
                 .path(PATH)
                 .maxAge(maxAge)
                 .build();
@@ -32,7 +38,7 @@ final class RefreshTokenCookie {
         return ResponseCookie.from(NAME, "")
                 .httpOnly(true)
                 .secure(true)
-                .sameSite("Strict")
+                .sameSite("None")
                 .path(PATH)
                 .maxAge(0)
                 .build();

@@ -40,9 +40,15 @@ import tools.jackson.databind.json.JsonMapper;
  * {@link CsvImportConfirmRateLimitFilter} (spec 006), depois do {@link JwtAuthenticationFilter} —
  * diferente dos dois anteriores, o bucket é por {@code Reseller} autenticada, não por IP.
  *
- * <p>CSRF desabilitado: a API é stateless via JWT, sem sessão nem cookie de sessão do servidor
- * (ver docs/architecture.md) — a proteção CSRF do Spring Security existe para autenticação
- * baseada em sessão/cookie, que este projeto não usa.
+ * <p>CSRF desabilitado: a API é stateless via JWT, sem sessão do servidor (ver
+ * docs/architecture.md) — a proteção CSRF do Spring Security existe para autenticação baseada em
+ * sessão, que este projeto não usa. A única exceção é o cookie do Refresh token
+ * ({@link dev.vitrio.api.auth.RefreshTokenCookie}, {@code SameSite=None} — necessário porque
+ * {@code vitrio-web} vive num domínio diferente da API): isso reabre uma CSRF de baixo impacto
+ * em {@code /refresh} e {@code /logout}, mitigada pela allowlist de origem do CORS abaixo (nunca
+ * wildcard) — uma origem fora da allowlist ainda consegue disparar a requisição e rotacionar/
+ * revogar o token da vítima, mas nunca consegue ler a resposta. Aceito deliberadamente: o pior
+ * caso é logout forçado, não exfiltração de token.
  *
  * <p>CORS habilitado com {@code allowCredentials=true} porque o Refresh token viaja num cookie
  * {@code httpOnly} (ver {@link dev.vitrio.api.auth.RefreshTokenCookie}), não só no corpo —
