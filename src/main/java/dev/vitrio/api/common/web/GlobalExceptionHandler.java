@@ -9,6 +9,7 @@ import dev.vitrio.api.auth.InvalidRefreshTokenException;
 import dev.vitrio.api.catalog.CatalogNotFoundException;
 import dev.vitrio.api.catalog.InvalidWhatsappNumberException;
 import dev.vitrio.api.catalog.WhatsappNumberNotConfiguredException;
+import dev.vitrio.api.category.CategoryNotFoundException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -53,6 +54,13 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleCatalogNotFound(CatalogNotFoundException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
         problemDetail.setTitle("Catalog not found");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(CategoryNotFoundException.class)
+    public ProblemDetail handleCategoryNotFound(CategoryNotFoundException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problemDetail.setTitle("Category not found");
         return problemDetail;
     }
 
