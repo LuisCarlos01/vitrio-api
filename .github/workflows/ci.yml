@@ -10,10 +10,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up JDK 25
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "25"
@@ -28,7 +28,7 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # SARIF alimenta o Security tab do GitHub e exit-code falha a pipeline (e por
       # consequência o deploy.yml, que só dispara com a run inteira do CI em sucesso)
@@ -52,7 +52,7 @@ jobs:
       # if: always() garante o upload mesmo quando o step acima falhou o job
       # (exit-code: 1 já reprovou a run; isso só preserva o relatório no Security tab).
       - name: Upload results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: trivy-results.sarif
