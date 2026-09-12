@@ -124,7 +124,11 @@ public class SecurityConfig {
 
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(allowedOrigins);
-        configuration.setAllowedMethods(List.of("GET", "POST"));
+        // Os 5 verbos usados por rotas reais sob /api/v1/** — catálogo/categoria/produto têm
+        // PATCH e DELETE, whatsapp tem PUT. OPTIONS não entra aqui: o Spring já resolve o
+        // preflight comparando Access-Control-Request-Method contra esta lista, sem precisar
+        // que OPTIONS conste nela.
+        configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "PUT", "DELETE"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
         // Falha já na subida se allowed-origins vier com "*" — combinado com allowCredentials=true
