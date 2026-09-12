@@ -18,8 +18,23 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
+  servlet:
+    multipart:
+      # Um pouco acima do limite de negócio de 10MB (spec 003) — dá folga pro overhead do
+      # multipart (boundary, headers dos outros campos), sem impedir um arquivo de 10MB exato
+      # de chegar até a validação de tamanho da aplicação (AssetService), que dá o erro claro.
+      max-file-size: 11MB
+      max-request-size: 11MB
 
 vitrio:
+  aws:
+    s3:
+      # Credenciais e bucket do S3 (spec 003 — upload de asset), sempre via variável de
+      # ambiente, nunca hardcoded (ver .env.example).
+      bucket-name: ${AWS_S3_BUCKET_NAME}
+      region: ${AWS_S3_REGION}
+      access-key-id: ${AWS_S3_ACCESS_KEY_ID}
+      secret-access-key: ${AWS_S3_SECRET_ACCESS_KEY}
   jwt:
     # Chave de assinatura HS256 do Access token — sempre via variável de ambiente,
     # nunca hardcoded nem commitada (ver .env.example para o default de desenvolvimento).

@@ -18,6 +18,15 @@ vitrio:
     # vitrio-web, que ainda não tem porta/framework decididos (ver
     # vitrio.cors.allowed-origins em application.yml).
     allowed-origins: http://localhost:5173
+  aws:
+    s3:
+      # Defaults só para o contexto Spring subir nos testes que não usam LocalStack (ex.:
+      # AbstractAuthIntegrationTest). Testes de asset sobrescrevem tudo aqui via
+      # @DynamicPropertySource, apontando pro container real (AbstractAssetIntegrationTest).
+      bucket-name: test-bucket
+      region: us-east-1
+      access-key-id: test
+      secret-access-key: test
 
 logging:
   level:

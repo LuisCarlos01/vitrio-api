@@ -1,5 +1,8 @@
 package dev.vitrio.api.common.web;
 
+import dev.vitrio.api.asset.AssetReadException;
+import dev.vitrio.api.asset.FileTooLargeException;
+import dev.vitrio.api.asset.UnsupportedImageFormatException;
 import dev.vitrio.api.auth.EmailAlreadyRegisteredException;
 import dev.vitrio.api.auth.InvalidCredentialsException;
 import dev.vitrio.api.auth.InvalidRefreshTokenException;
@@ -15,6 +18,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 /**
  * Tratamento de erro transversal, no formato RFC 9457 ("Problem Details for HTTP APIs"), via
@@ -63,6 +67,39 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleWhatsappNumberNotConfigured(WhatsappNumberNotConfiguredException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problemDetail.setTitle("WhatsApp number not configured");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(UnsupportedImageFormatException.class)
+    public ProblemDetail handleUnsupportedImageFormat(UnsupportedImageFormatException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problemDetail.setTitle("Unsupported image format");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(AssetReadException.class)
+    public ProblemDetail handleAssetReadFailure(AssetReadException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problemDetail.setTitle("Could not read uploaded file");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(FileTooLargeException.class)
+    public ProblemDetail handleFileTooLarge(FileTooLargeException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problemDetail.setTitle("File too large");
+        return problemDetail;
+    }
+
+    // Rede de segurança do limite do container de multipart (application.yml,
+    // spring.servlet.multipart.max-file-size) — na prática FileTooLargeException já cobre o
+    // limite de negócio de 10MB antes disso, mas um payload muito maior pode ser rejeitado pelo
+    // Tomcat antes mesmo de chegar no service.
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ProblemDetail handleMaxUploadSizeExceeded(MaxUploadSizeExceededException ex) {
+        ProblemDetail problemDetail =
+                ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, new FileTooLargeException().getMessage());
+        problemDetail.setTitle("File too large");
         return problemDetail;
     }
 

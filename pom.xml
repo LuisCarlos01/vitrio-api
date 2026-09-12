@@ -24,10 +24,25 @@
         <bucket4j.version>8.14.0</bucket4j.version>
         <caffeine.version>3.2.0</caffeine.version>
         <jacoco.version>0.8.15</jacoco.version>
+        <!-- AWS SDK v2: fora do BOM do Spring Boot, versão fixada manualmente via import do
+             BOM oficial da AWS (mantém s3 e localstack/testcontainers na mesma linha de versão). -->
+        <aws-sdk.version>2.54.14</aws-sdk.version>
         <!-- Override do BOM do Spring Boot (que gerencia pra 42.7.11) — CVE-2026-53712/CVE-2026-42198,
              fixadas em 42.7.12+ (auditoria de segurança, achado #5). -->
         <postgresql.version>42.7.13</postgresql.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>${aws-sdk.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -129,6 +144,12 @@
             <version>${caffeine.version}</version>
         </dependency>
 
+        <!-- Cliente S3 (AWS SDK v2) para o upload de Asset (spec 003). -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -160,6 +181,13 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- LocalStack (S3): mesmo padrão do Postgres real via Testcontainers nos testes de
+             catalog — integração de verdade contra a API S3, não um mock do S3Client. -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-localstack</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
