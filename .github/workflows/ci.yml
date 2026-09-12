@@ -33,7 +33,9 @@ jobs:
       # SARIF alimenta o Security tab do GitHub e exit-code falha a pipeline (e por
       # consequência o deploy.yml, que só dispara com a run inteira do CI em sucesso)
       # no mesmo scan — CVE CRITICAL/HIGH com correção disponível, secret exposto ou
-      # misconfig no Dockerfile/compose.
+      # misconfig no Dockerfile/compose. limit-severities-for-sarif é obrigatório aqui:
+      # sem ele, a action ignora o filtro `severity` ao gerar SARIF (aplica a todas as
+      # severidades) e o exit-code passa a refletir isso, não o filtro configurado.
       - name: Trivy scan
         uses: aquasecurity/trivy-action@v0.36.0
         with:
@@ -45,6 +47,7 @@ jobs:
           format: sarif
           output: trivy-results.sarif
           exit-code: "1"
+          limit-severities-for-sarif: true
 
       # if: always() garante o upload mesmo quando o step acima falhou o job
       # (exit-code: 1 já reprovou a run; isso só preserva o relatório no Security tab).
