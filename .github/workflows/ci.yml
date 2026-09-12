@@ -21,3 +21,43 @@ jobs:
 
       - name: Build and test
         run: ./mvnw -B clean verify
+
+  security:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # Relatório pro Security tab do GitHub — não falha o job mesmo com achados,
+      # só alimenta o dashboard (a próxima etapa é quem decide se quebra o build).
+      - name: Trivy scan (report to Security tab)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-results.sarif
+
+      - name: Upload results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+
+      # Mesmo scan, formato texto — falha a pipeline (e por consequência o deploy.yml,
+      # que só dispara com a run inteira do CI em sucesso) se houver CVE CRITICAL/HIGH
+      # com correção disponível, secret exposto ou misconfig no Dockerfile/compose.
+      - name: Trivy scan (fail build on findings)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
