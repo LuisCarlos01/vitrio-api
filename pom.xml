@@ -72,6 +72,14 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Parsing de CSV (spec 006, RFC 4180 — aspas e campos com vírgula/quebra de linha
+             embutida) — fora do BOM do Spring Boot, versão fixada manualmente. -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.14.1</version>
+        </dependency>
+
         <!-- Argon2PasswordEncoder (spring-security-crypto) delega a implementação do Argon2id
              para o BouncyCastle em tempo de execução; sem essa dependência, encode()/matches()
              lançam NoClassDefFoundError assim que são chamados, mesmo com o bean configurado

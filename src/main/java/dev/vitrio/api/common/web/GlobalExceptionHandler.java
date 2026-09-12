@@ -10,6 +10,8 @@ import dev.vitrio.api.catalog.CatalogNotFoundException;
 import dev.vitrio.api.catalog.InvalidWhatsappNumberException;
 import dev.vitrio.api.catalog.WhatsappNumberNotConfiguredException;
 import dev.vitrio.api.category.CategoryNotFoundException;
+import dev.vitrio.api.csvimport.CsvFileTooLargeException;
+import dev.vitrio.api.csvimport.CsvReadException;
 import dev.vitrio.api.product.DuplicateSkuException;
 import dev.vitrio.api.product.InvalidCategoryException;
 import dev.vitrio.api.product.InvalidImageAssetException;
@@ -67,6 +69,20 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleCategoryNotFound(CategoryNotFoundException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
         problemDetail.setTitle("Category not found");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(CsvFileTooLargeException.class)
+    public ProblemDetail handleCsvFileTooLarge(CsvFileTooLargeException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problemDetail.setTitle("CSV file too large");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(CsvReadException.class)
+    public ProblemDetail handleCsvReadFailure(CsvReadException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problemDetail.setTitle("Could not read CSV file");
         return problemDetail;
     }
 
