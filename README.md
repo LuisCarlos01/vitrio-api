@@ -67,8 +67,7 @@ controllers/DTOs) — não é escrito à mão. Duas formas de consumir:
 
 AWS EC2 (`t3.micro`), HTTPS via Elastic IP + `sslip.io` + Caddy, CI/CD via GitHub Actions
 (ver [ADR-0005](docs/adr/0005-aws-ec2-deploy-with-https-and-cicd.md) e o runbook em
-[`docs/deployment.md`](docs/deployment.md)). Preencher aqui o hostname real após o primeiro
-provisionamento:
+[`docs/deployment.md`](docs/deployment.md)).
 
-- API: `https://{PLACEHOLDER}.sslip.io`
-- Swagger UI: `https://{PLACEHOLDER}.sslip.io/swagger-ui.html`
+- API: `https://16-59-88-232.sslip.io`
+- Swagger UI: `https://16-59-88-232.sslip.io/swagger-ui.html`
