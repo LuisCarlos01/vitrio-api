@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -49,6 +50,12 @@ public class ProductController {
             @Valid @RequestBody UpdateProductRequest request,
             Authentication authentication) {
         return productService.update(ownerId(authentication), catalogId, id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID catalogId, @PathVariable UUID id, Authentication authentication) {
+        productService.delete(ownerId(authentication), catalogId, id);
+        return ResponseEntity.noContent().build();
     }
 
     private UUID ownerId(Authentication authentication) {

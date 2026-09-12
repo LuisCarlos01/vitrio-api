@@ -103,6 +103,15 @@ public class ProductService {
         }
     }
 
+    @Transactional
+    public void delete(UUID ownerId, UUID catalogId, UUID id) {
+        requireOwnedCatalog(ownerId, catalogId);
+        Product product = findInCatalogOrThrow(catalogId, id);
+        // Exclusão permanente (US5) — distinta de desativar (isActive=false, US3), que
+        // preserva o cadastro. A confirmação ("não pode ser desfeita") é do frontend.
+        productRepository.delete(product);
+    }
+
     @Transactional(readOnly = true)
     public List<ProductResponse> listByCatalog(UUID ownerId, UUID catalogId) {
         requireOwnedCatalog(ownerId, catalogId);

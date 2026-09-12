@@ -40,3 +40,6 @@ build/
 
 ### Env ###
 .env
+
+### Notas locais (nunca commitadas — tickets/specs sempre vão pro GitHub, ver CLAUDE.md) ###
+.scratch/
