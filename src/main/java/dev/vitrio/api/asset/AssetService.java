@@ -40,6 +40,17 @@ public class AssetService {
             // domínio deste módulo.
             throw new AssetReadException(e);
         }
+        return upload(catalogId, content);
+    }
+
+    /**
+     * Mesma validação (tamanho, formato por conteúdo real) e upload de {@link #upload(UUID, UUID,
+     * MultipartFile)}, mas recebendo os bytes diretamente — usado pela importação de CSV (spec
+     * 006), que já validou o catálogo e já tem os bytes baixados da URL da imagem, sem passar por
+     * um {@link MultipartFile} nem repetir a checagem de posse do catálogo.
+     */
+    @Transactional
+    public AssetResponse upload(UUID catalogId, byte[] content) {
         if (content.length > MAX_FILE_SIZE_BYTES) {
             throw new FileTooLargeException();
         }

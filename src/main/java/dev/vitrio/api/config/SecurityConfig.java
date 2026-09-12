@@ -6,6 +6,7 @@ import dev.vitrio.api.auth.LoginRateLimitFilter;
 import dev.vitrio.api.auth.RegisterRateLimitFilter;
 import dev.vitrio.api.auth.RestAccessDeniedHandler;
 import dev.vitrio.api.auth.RestAuthenticationEntryPoint;
+import dev.vitrio.api.csvimport.CsvImportConfirmRateLimitFilter;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -35,7 +36,9 @@ import tools.jackson.databind.json.JsonMapper;
  * {@link RestAccessDeniedHandler}, respectivamente. {@code /login} passa pelo
  * {@link LoginRateLimitFilter} e {@code /register} pelo
  * {@link RegisterRateLimitFilter} (Vitrio spec 001), ambos antes de qualquer verificação de
- * credenciais/persistência.
+ * credenciais/persistência. {@code POST .../products/import/confirm} passa pelo
+ * {@link CsvImportConfirmRateLimitFilter} (spec 006), depois do {@link JwtAuthenticationFilter} —
+ * diferente dos dois anteriores, o bucket é por {@code Reseller} autenticada, não por IP.
  *
  * <p>CSRF desabilitado: a API é stateless via JWT, sem sessão nem cookie de sessão do servidor
  * (ver docs/architecture.md) — a proteção CSRF do Spring Security existe para autenticação
@@ -58,12 +61,18 @@ public class SecurityConfig {
             @Value("${vitrio.rate-limit.login-capacity}") int loginRateLimitCapacity,
             @Value("${vitrio.rate-limit.login-window-seconds}") long loginRateLimitWindowSeconds,
             @Value("${vitrio.rate-limit.register-capacity}") int registerRateLimitCapacity,
-            @Value("${vitrio.rate-limit.register-window-seconds}") long registerRateLimitWindowSeconds)
+            @Value("${vitrio.rate-limit.register-window-seconds}") long registerRateLimitWindowSeconds,
+            @Value("${vitrio.rate-limit.csv-import-confirm-capacity}") int csvImportConfirmRateLimitCapacity,
+            @Value("${vitrio.rate-limit.csv-import-confirm-window-seconds}") long csvImportConfirmRateLimitWindowSeconds)
             throws Exception {
         LoginRateLimitFilter loginRateLimitFilter = new LoginRateLimitFilter(
                 jsonMapper, loginRateLimitCapacity, Duration.ofSeconds(loginRateLimitWindowSeconds));
         RegisterRateLimitFilter registerRateLimitFilter = new RegisterRateLimitFilter(
                 jsonMapper, registerRateLimitCapacity, Duration.ofSeconds(registerRateLimitWindowSeconds));
+        CsvImportConfirmRateLimitFilter csvImportConfirmRateLimitFilter = new CsvImportConfirmRateLimitFilter(
+                jsonMapper,
+                csvImportConfirmRateLimitCapacity,
+                Duration.ofSeconds(csvImportConfirmRateLimitWindowSeconds));
 
         http.csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
@@ -85,7 +94,11 @@ public class SecurityConfig {
                         .accessDeniedHandler(new RestAccessDeniedHandler(jsonMapper)))
                 .addFilterBefore(new JwtAuthenticationFilter(jwtService), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(loginRateLimitFilter, JwtAuthenticationFilter.class)
-                .addFilterBefore(registerRateLimitFilter, JwtAuthenticationFilter.class);
+                .addFilterBefore(registerRateLimitFilter, JwtAuthenticationFilter.class)
+                // Ao contrário dos dois acima, roda DEPOIS do JwtAuthenticationFilter: precisa do
+                // Authentication já populado pra saber de qual Reseller é o bucket (ver Javadoc de
+                // CsvImportConfirmRateLimitFilter).
+                .addFilterAfter(csvImportConfirmRateLimitFilter, JwtAuthenticationFilter.class);
         return http.build();
     }
 

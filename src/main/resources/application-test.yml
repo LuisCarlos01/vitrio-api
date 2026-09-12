@@ -13,6 +13,8 @@ vitrio:
     login-window-seconds: 60
     register-capacity: 1000
     register-window-seconds: 60
+    csv-import-confirm-capacity: 1000
+    csv-import-confirm-window-seconds: 60
   cors:
     # Valor fixo só para exercitar o comportamento de CORS nos testes — não é a origem real do
     # vitrio-web, que ainda não tem porta/framework decididos (ver

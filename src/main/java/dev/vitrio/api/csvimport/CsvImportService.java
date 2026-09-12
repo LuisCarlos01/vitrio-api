@@ -1,8 +1,17 @@
 package dev.vitrio.api.csvimport;
 
+import dev.vitrio.api.asset.AssetResponse;
+import dev.vitrio.api.asset.AssetService;
+import dev.vitrio.api.asset.FileTooLargeException;
+import dev.vitrio.api.asset.UnsupportedImageFormatException;
 import dev.vitrio.api.catalog.CatalogNotFoundException;
 import dev.vitrio.api.catalog.CatalogRepository;
+import dev.vitrio.api.product.CreateProductRequest;
+import dev.vitrio.api.product.DuplicateSkuException;
+import dev.vitrio.api.product.ProductLimitExceededException;
 import dev.vitrio.api.product.ProductRepository;
+import dev.vitrio.api.product.ProductResponse;
+import dev.vitrio.api.product.ProductService;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
@@ -38,16 +47,76 @@ public class CsvImportService {
 
     private final CatalogRepository catalogRepository;
     private final ProductRepository productRepository;
+    private final ProductService productService;
+    private final AssetService assetService;
+    private final ImageDownloader imageDownloader;
 
-    public CsvImportService(CatalogRepository catalogRepository, ProductRepository productRepository) {
+    public CsvImportService(
+            CatalogRepository catalogRepository,
+            ProductRepository productRepository,
+            ProductService productService,
+            AssetService assetService,
+            ImageDownloader imageDownloader) {
         this.catalogRepository = catalogRepository;
         this.productRepository = productRepository;
+        this.productService = productService;
+        this.assetService = assetService;
+        this.imageDownloader = imageDownloader;
     }
 
     @Transactional(readOnly = true)
     public List<CsvImportRowResult> validate(UUID ownerId, UUID catalogId, MultipartFile file) {
         requireOwnedCatalog(ownerId, catalogId);
+        return validateStructure(catalogId, file);
+    }
 
+    /**
+     * Confirmação da importação (spec 006, US2): reroda a mesma validação estrutural da prévia e,
+     * pra cada linha que passar, baixa a imagem (ADR-0004), envia pro S3 (spec 003) e cria o
+     * {@code Product} (spec 004). Nunca tudo-ou-nada — cada linha é reportada individualmente,
+     * mesmo quando outras falham. Deliberadamente sem {@code @Transactional} neste nível: cada
+     * linha pode envolver um download de rede de até 10s (timeout), e {@link ProductService#create}
+     * / {@link AssetService#upload(UUID, byte[])} já são transacionais por conta própria — uma
+     * transação única cobrindo até 50 downloads sequenciais seguraria uma conexão de banco por
+     * tempo desproporcional.
+     */
+    public List<CsvImportConfirmRowResult> confirm(UUID ownerId, UUID catalogId, MultipartFile file) {
+        requireOwnedCatalog(ownerId, catalogId);
+        List<CsvImportRowResult> structuralResults = validateStructure(catalogId, file);
+
+        List<CsvImportConfirmRowResult> results = new ArrayList<>();
+        for (CsvImportRowResult row : structuralResults) {
+            results.add(confirmRow(ownerId, catalogId, row));
+        }
+        return results;
+    }
+
+    private CsvImportConfirmRowResult confirmRow(UUID ownerId, UUID catalogId, CsvImportRowResult row) {
+        if (!row.isValid()) {
+            return CsvImportConfirmRowResult.from(row, null, row.errors());
+        }
+
+        try {
+            byte[] imageContent = imageDownloader.download(row.imageUrl());
+            AssetResponse asset = assetService.upload(catalogId, imageContent);
+            CreateProductRequest request =
+                    new CreateProductRequest(row.name(), row.sku(), row.description(), asset.id(), null);
+            ProductResponse product = productService.create(ownerId, catalogId, request);
+            return CsvImportConfirmRowResult.from(row, product.id(), List.of());
+        } catch (ImageDownloadException
+                | FileTooLargeException
+                | UnsupportedImageFormatException
+                | DuplicateSkuException
+                | ProductLimitExceededException e) {
+            // Motivo específico do download (timeout, DNS, SSRF) já foi logado em
+            // ImageDownloader, com a mesma mensagem genérica aqui; as demais exceções reusam a
+            // mensagem já existente da spec 003/004 (formato/tamanho de imagem, SKU duplicado,
+            // limite de produtos) — nunca duplicada aqui.
+            return CsvImportConfirmRowResult.from(row, null, List.of(e.getMessage()));
+        }
+    }
+
+    private List<CsvImportRowResult> validateStructure(UUID catalogId, MultipartFile file) {
         byte[] content = readBytes(file);
         if (content.length > MAX_FILE_SIZE_BYTES) {
             throw new CsvFileTooLargeException();

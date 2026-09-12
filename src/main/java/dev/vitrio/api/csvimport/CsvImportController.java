@@ -28,6 +28,15 @@ public class CsvImportController {
         return new CsvImportPreviewResponse(rows);
     }
 
+    // Rate limit dedicado (10/hora por Reseller, spec 006 US2 cenário 9) aplicado antes daqui,
+    // em CsvImportConfirmRateLimitFilter (SecurityConfig) — não neste controller.
+    @PostMapping(path = "/confirm", consumes = "multipart/form-data")
+    public CsvImportConfirmResponse confirm(
+            @PathVariable UUID catalogId, @RequestParam MultipartFile file, Authentication authentication) {
+        List<CsvImportConfirmRowResult> rows = csvImportService.confirm(ownerId(authentication), catalogId, file);
+        return new CsvImportConfirmResponse(rows);
+    }
+
     private UUID ownerId(Authentication authentication) {
         return UUID.fromString(authentication.getName());
     }

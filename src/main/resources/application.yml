@@ -61,6 +61,11 @@ vitrio:
     # rajada (ex.: várias pessoas atrás do mesmo IP/NAT se cadastrando na mesma janela).
     register-capacity: ${VITRIO_RATE_LIMIT_REGISTER_CAPACITY:10}
     register-window-seconds: ${VITRIO_RATE_LIMIT_REGISTER_WINDOW_SECONDS:60}
+    # Rate limiting na confirmação de importação de CSV (spec 006, US2), por Reseller autenticada
+    # (não por IP, diferente de login/register) — 10 confirmações por hora é generoso o bastante
+    # pro uso legítimo, já que ninguém reimporta o catálogo inteiro repetidamente.
+    csv-import-confirm-capacity: ${VITRIO_RATE_LIMIT_CSV_IMPORT_CONFIRM_CAPACITY:10}
+    csv-import-confirm-window-seconds: ${VITRIO_RATE_LIMIT_CSV_IMPORT_CONFIRM_WINDOW_SECONDS:3600}
   cors:
     # Lista de origens permitidas, separadas por vírgula (dev + produção do vitrio-web).
     # Sem default: o frontend ainda não tem porta/domínio decidido, então falhar fechado
