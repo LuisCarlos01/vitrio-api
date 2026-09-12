@@ -32,3 +32,13 @@ Requer Docker rodando (Testcontainers sobe um Postgres real para os testes de
 integração).
 
 Frontend em repositório separado: `vitrio-web`.
+
+## Deployment
+
+AWS EC2 (`t3.micro`), HTTPS via Elastic IP + `sslip.io` + Caddy, CI/CD via GitHub Actions
+(ver [ADR-0005](docs/adr/0005-aws-ec2-deploy-with-https-and-cicd.md) e o runbook em
+[`docs/deployment.md`](docs/deployment.md)). Preencher aqui o hostname real após o primeiro
+provisionamento:
+
+- API: `https://{PLACEHOLDER}.sslip.io`
+- Swagger UI: `https://{PLACEHOLDER}.sslip.io/swagger-ui.html`

@@ -41,5 +41,9 @@ build/
 ### Env ###
 .env
 
+### Caddy config real da instância (hostname sslip.io específico do ambiente) — ###
+### ver Caddyfile.example para o template committed. ###
+Caddyfile
+
 ### Notas locais (nunca commitadas — tickets/specs sempre vão pro GitHub, ver CLAUDE.md) ###
 .scratch/
