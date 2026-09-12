@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.0</version>
+        <version>4.1.1</version>
         <relativePath/>
     </parent>
 
@@ -30,6 +30,9 @@
         <!-- Override do BOM do Spring Boot (que gerencia pra 42.7.11) — CVE-2026-53712/CVE-2026-42198,
              fixadas em 42.7.12+ (auditoria de segurança, achado #5). -->
         <postgresql.version>42.7.13</postgresql.version>
+        <!-- Override do BOM do Spring Boot (que gerencia pra 11.0.24) — CVE-2026-65182/CVE-2026-65905/
+             CVE-2026-68525 (bypass de autenticação/controle de acesso), fixadas em 11.0.25+. -->
+        <tomcat.version>11.0.25</tomcat.version>
     </properties>
 
     <dependencyManagement>
