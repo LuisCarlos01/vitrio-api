@@ -15,6 +15,14 @@ herdados do projeto de origem devem ser revisados e ajustados à realidade deste
 antes do commit — nunca citar uma ADR, issue ou versão que não existe neste
 repositório.
 
+Depois do `code-review`, conferir item por item os "Acceptance criteria" da issue
+correspondente: para cada um, apontar o teste (ou execução manual) que efetivamente o
+prova — não basta o código parecer certo na leitura. Reportar isso no output pro
+usuário, um por um. Quando um critério não puder ser verificado agora (ex.: depende de
+uma entidade/tabela que só existe numa issue futura ainda não implementada), marcar
+como não verificado e explicar o motivo explicitamente — nunca fechar a issue nem
+marcar o critério como atendido silenciosamente.
+
 ## Fluxo de uma spec
 
 Ordem fixa, nesta sequência: `spec.md` em `specs/` → `/to-tickets` quebra a spec em
