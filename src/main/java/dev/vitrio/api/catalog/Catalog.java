@@ -37,7 +37,7 @@ public class Catalog {
     private String slug;
 
     // Nullable de propósito: "nunca customizou" fica distinguível de "customizou igual ao
-    // default" — o valor padrão é resolvido em CatalogResponse, não aqui (spec 002).
+    // default" — o valor padrão é resolvido em CatalogColorDefaults, não aqui (spec 002).
     @Column(name = "primary_color_hex")
     private String primaryColorHex;
 

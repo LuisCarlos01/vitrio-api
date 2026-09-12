@@ -9,6 +9,10 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     List<Product> findByCatalogIdOrderByCreatedAtDesc(UUID catalogId);
 
+    // Vitrine pública (spec 005): só produtos ativos e visíveis entram na resposta — filtro no
+    // servidor, nunca responsabilidade do cliente (CONTEXT.md, "Estados do produto").
+    List<Product> findByCatalogIdAndActiveTrueAndVisibleTrueOrderByCreatedAtDesc(UUID catalogId);
+
     // Isolamento (ADR-0003): "não existe" e "existe mas é de outro catálogo" viram a mesma
     // exceção — mesmo padrão de CategoryRepository/AssetRepository.
     Optional<Product> findByIdAndCatalogId(UUID id, UUID catalogId);

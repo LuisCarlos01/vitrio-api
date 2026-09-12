@@ -15,6 +15,7 @@ import dev.vitrio.api.product.InvalidCategoryException;
 import dev.vitrio.api.product.InvalidImageAssetException;
 import dev.vitrio.api.product.ProductLimitExceededException;
 import dev.vitrio.api.product.ProductNotFoundException;
+import dev.vitrio.api.publiccatalog.PublicCatalogNotFoundException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -101,6 +102,13 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleProductLimitExceeded(ProductLimitExceededException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         problemDetail.setTitle("Product limit exceeded");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(PublicCatalogNotFoundException.class)
+    public ProblemDetail handlePublicCatalogNotFound(PublicCatalogNotFoundException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problemDetail.setTitle("Catalog not found");
         return problemDetail;
     }
 
