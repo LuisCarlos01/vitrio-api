@@ -1,0 +1,91 @@
+package dev.vitrio.api.product;
+
+import dev.vitrio.api.asset.AssetRepository;
+import dev.vitrio.api.catalog.CatalogNotFoundException;
+import dev.vitrio.api.catalog.CatalogRepository;
+import dev.vitrio.api.category.CategoryRepository;
+import java.util.List;
+import java.util.UUID;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class ProductService {
+
+    // Limite do MVP (ideia.md, spec 004) — checado só na criação, nunca na edição de um
+    // produto já existente.
+    private static final int MAX_PRODUCTS_PER_CATALOG = 50;
+
+    private final CatalogRepository catalogRepository;
+    private final CategoryRepository categoryRepository;
+    private final AssetRepository assetRepository;
+    private final ProductRepository productRepository;
+
+    public ProductService(
+            CatalogRepository catalogRepository,
+            CategoryRepository categoryRepository,
+            AssetRepository assetRepository,
+            ProductRepository productRepository) {
+        this.catalogRepository = catalogRepository;
+        this.categoryRepository = categoryRepository;
+        this.assetRepository = assetRepository;
+        this.productRepository = productRepository;
+    }
+
+    @Transactional
+    public ProductResponse create(UUID ownerId, UUID catalogId, CreateProductRequest request) {
+        requireOwnedCatalog(ownerId, catalogId);
+
+        if (productRepository.countByCatalogId(catalogId) >= MAX_PRODUCTS_PER_CATALOG) {
+            throw new ProductLimitExceededException();
+        }
+        if (request.sku() != null && productRepository.existsByCatalogIdAndSku(catalogId, request.sku())) {
+            throw new DuplicateSkuException();
+        }
+        assetRepository
+                .findByIdAndCatalogId(request.imageAssetId(), catalogId)
+                .orElseThrow(InvalidImageAssetException::new);
+        if (request.categoryId() != null) {
+            categoryRepository
+                    .findByIdAndCatalogId(request.categoryId(), catalogId)
+                    .orElseThrow(InvalidCategoryException::new);
+        }
+
+        Product product = new Product(
+                catalogId, request.name(), request.sku(), request.description(), request.imageAssetId(), request.categoryId());
+        try {
+            return ProductResponse.from(productRepository.saveAndFlush(product));
+        } catch (DataIntegrityViolationException e) {
+            // Rede de segurança contra corrida de escrita concorrente: dois requests podem
+            // passar pelo existsByCatalogIdAndSku acima antes de qualquer um commitar — o
+            // índice único parcial (V9) pega isso no banco, e aqui vira o mesmo 409 do
+            // check-then-insert, em vez de vazar como erro genérico.
+            throw new DuplicateSkuException();
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductResponse> listByCatalog(UUID ownerId, UUID catalogId) {
+        requireOwnedCatalog(ownerId, catalogId);
+        return productRepository.findByCatalogIdOrderByCreatedAtDesc(catalogId).stream()
+                .map(ProductResponse::from)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public ProductResponse getOne(UUID ownerId, UUID catalogId, UUID id) {
+        requireOwnedCatalog(ownerId, catalogId);
+        return ProductResponse.from(findInCatalogOrThrow(catalogId, id));
+    }
+
+    // Isolamento (ADR-0003): "catálogo não existe" e "catálogo não é meu" viram a mesma
+    // exceção — 404 genérico, nunca 403, mesmo padrão de CategoryService/AssetService.
+    private void requireOwnedCatalog(UUID ownerId, UUID catalogId) {
+        catalogRepository.findByIdAndOwnerId(catalogId, ownerId).orElseThrow(CatalogNotFoundException::new);
+    }
+
+    private Product findInCatalogOrThrow(UUID catalogId, UUID id) {
+        return productRepository.findByIdAndCatalogId(id, catalogId).orElseThrow(ProductNotFoundException::new);
+    }
+}

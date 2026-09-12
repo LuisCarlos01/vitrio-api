@@ -10,6 +10,11 @@ import dev.vitrio.api.catalog.CatalogNotFoundException;
 import dev.vitrio.api.catalog.InvalidWhatsappNumberException;
 import dev.vitrio.api.catalog.WhatsappNumberNotConfiguredException;
 import dev.vitrio.api.category.CategoryNotFoundException;
+import dev.vitrio.api.product.DuplicateSkuException;
+import dev.vitrio.api.product.InvalidCategoryException;
+import dev.vitrio.api.product.InvalidImageAssetException;
+import dev.vitrio.api.product.ProductLimitExceededException;
+import dev.vitrio.api.product.ProductNotFoundException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -61,6 +66,41 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleCategoryNotFound(CategoryNotFoundException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
         problemDetail.setTitle("Category not found");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ProblemDetail handleProductNotFound(ProductNotFoundException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problemDetail.setTitle("Product not found");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(InvalidImageAssetException.class)
+    public ProblemDetail handleInvalidImageAsset(InvalidImageAssetException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problemDetail.setTitle("Invalid image asset");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(InvalidCategoryException.class)
+    public ProblemDetail handleInvalidCategory(InvalidCategoryException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problemDetail.setTitle("Invalid category");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(DuplicateSkuException.class)
+    public ProblemDetail handleDuplicateSku(DuplicateSkuException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problemDetail.setTitle("Duplicate SKU");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(ProductLimitExceededException.class)
+    public ProblemDetail handleProductLimitExceeded(ProductLimitExceededException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problemDetail.setTitle("Product limit exceeded");
         return problemDetail;
     }
 
