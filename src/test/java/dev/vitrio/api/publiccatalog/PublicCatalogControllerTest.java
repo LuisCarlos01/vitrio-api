@@ -68,7 +68,7 @@ class PublicCatalogControllerTest extends AbstractProductIntegrationTest {
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginResponse.accessToken())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonMapper.writeValueAsString(
-                        new UpdateCatalogRequest(null, "#123456", "#654321", "boutique.publica"))));
+                        new UpdateCatalogRequest(null, "#123456", "#654321", "boutique.publica", null))));
         String slug = fetchSlug(loginResponse, catalogId);
         String assetId = createAssetAndGetId(loginResponse, catalogId);
         String categoryId = createCategoryForCatalog(loginResponse, catalogId, "Semijoias");

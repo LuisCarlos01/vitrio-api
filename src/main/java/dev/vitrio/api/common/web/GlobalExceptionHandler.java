@@ -7,6 +7,7 @@ import dev.vitrio.api.auth.EmailAlreadyRegisteredException;
 import dev.vitrio.api.auth.InvalidCredentialsException;
 import dev.vitrio.api.auth.InvalidRefreshTokenException;
 import dev.vitrio.api.catalog.CatalogNotFoundException;
+import dev.vitrio.api.catalog.InvalidLogoAssetException;
 import dev.vitrio.api.catalog.InvalidWhatsappNumberException;
 import dev.vitrio.api.catalog.WhatsappNumberNotConfiguredException;
 import dev.vitrio.api.category.CategoryNotFoundException;
@@ -97,6 +98,13 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleInvalidImageAsset(InvalidImageAssetException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         problemDetail.setTitle("Invalid image asset");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(InvalidLogoAssetException.class)
+    public ProblemDetail handleInvalidLogoAsset(InvalidLogoAssetException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problemDetail.setTitle("Invalid logo asset");
         return problemDetail;
     }
 

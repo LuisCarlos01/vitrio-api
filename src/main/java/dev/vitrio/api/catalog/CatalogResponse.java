@@ -13,9 +13,13 @@ public record CatalogResponse(
         String whatsappNumber,
         WhatsappVerificationStatus whatsappVerificationStatus,
         Instant whatsappVerifiedAt,
+        String logoUrl,
         Instant createdAt) {
 
-    static CatalogResponse from(Catalog catalog) {
+    // logoUrl (nunca logoAssetId bruto) é resolvido fora daqui, não a partir do próprio Catalog —
+    // diferente de Product/ProductResponse (que expõe imageAssetId bruto), porque o dashboard
+    // precisa reexibir o logo atual sem outro endpoint pra resolver asset->URL (spec 007).
+    static CatalogResponse from(Catalog catalog, String logoUrl) {
         return new CatalogResponse(
                 catalog.getId(),
                 catalog.getName(),
@@ -26,6 +30,7 @@ public record CatalogResponse(
                 catalog.getWhatsappNumber(),
                 catalog.getWhatsappVerificationStatus(),
                 catalog.getWhatsappVerifiedAt(),
+                logoUrl,
                 catalog.getCreatedAt());
     }
 }

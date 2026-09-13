@@ -101,6 +101,20 @@ class CatalogControllerUpdateTest extends AbstractCatalogIntegrationTest {
                 .andExpect(jsonPath("$.title").value("Catalog not found"));
     }
 
+    // Prova que o isolamento por dono (404 genérico) roda antes da validação de logoAssetId —
+    // um intruso nunca recebe "Invalid logo asset" (400) revelando que o catálogo existe, sempre
+    // o mesmo 404 genérico independente do campo enviado (spec 007, US1 cenário 5).
+    @Test
+    void updatingCatalogOfAnotherResellerWithLogoAssetIdReturnsGenericNotFound() throws Exception {
+        LoginResponse owner = registerAndLogin("update-catalog-logo-owner@example.com", "Str0ngP@ssw0rd!");
+        LoginResponse intruder = registerAndLogin("update-catalog-logo-intruder@example.com", "Str0ngP@ssw0rd!");
+        String id = createCatalogAndGetId(owner, "Catalogo Alheio Com Logo");
+
+        performUpdate(intruder, id, "{\"logoAssetId\":\"" + UUID.randomUUID() + "\"}")
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.title").value("Catalog not found"));
+    }
+
     @Test
     void updatingNonExistentCatalogReturnsSameGenericNotFound() throws Exception {
         LoginResponse owner = registerAndLogin("update-catalog-nonexistent@example.com", "Str0ngP@ssw0rd!");
@@ -108,6 +122,24 @@ class CatalogControllerUpdateTest extends AbstractCatalogIntegrationTest {
         performUpdate(owner, UUID.randomUUID().toString(), "{\"name\":\"Nao Existe\"}")
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.title").value("Catalog not found"));
+    }
+
+    @Test
+    void catalogWithoutLogoReturnsNullLogoUrl() throws Exception {
+        LoginResponse owner = registerAndLogin("update-catalog-nologo@example.com", "Str0ngP@ssw0rd!");
+        String id = createCatalogAndGetId(owner, "Catalogo Sem Logo");
+
+        performUpdate(owner, id, "{}").andExpect(status().isOk()).andExpect(jsonPath("$.logoUrl").isEmpty());
+    }
+
+    @Test
+    void nonExistentLogoAssetIdIsRejected() throws Exception {
+        LoginResponse owner = registerAndLogin("update-catalog-nonexistentlogo@example.com", "Str0ngP@ssw0rd!");
+        String id = createCatalogAndGetId(owner, "Catalogo Logo Inexistente");
+
+        performUpdate(owner, id, "{\"logoAssetId\":\"" + UUID.randomUUID() + "\"}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Invalid logo asset"));
     }
 
     private org.springframework.test.web.servlet.ResultActions performUpdate(

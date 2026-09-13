@@ -57,6 +57,11 @@ public class Catalog {
     @Column(name = "whatsapp_verified_at")
     private Instant whatsappVerifiedAt;
 
+    // Nullable de propósito, mesmo motivo das cores acima: sem logo padrão da aplicação, "nunca
+    // definiu" é o único estado "sem logo" que existe (spec 007).
+    @Column(name = "logo_asset_id")
+    private UUID logoAssetId;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -123,6 +128,10 @@ public class Catalog {
         return whatsappVerifiedAt;
     }
 
+    public UUID getLogoAssetId() {
+        return logoAssetId;
+    }
+
     // Cada parâmetro null significa "não veio no PATCH" (US1) — mantém o valor atual em vez de
     // apagar; a validação de formato (regex de cor, tamanho) já aconteceu na camada de DTO.
     public void applyPersonalization(String name, String primaryColorHex, String buttonColorHex, String instagramHandle) {
@@ -151,5 +160,14 @@ public class Catalog {
     public void verifyWhatsapp(Instant verifiedAt) {
         this.whatsappVerificationStatus = WhatsappVerificationStatus.VERIFIED;
         this.whatsappVerifiedAt = verifiedAt;
+    }
+
+    // null = "não veio no PATCH" (spec 007, US1 cenário 3), mesma semântica de
+    // applyPersonalization — sem forma de limpar um logo já definido, só substituir (mesmo
+    // padrão já aceito pro WhatsApp).
+    public void updateLogo(UUID logoAssetId) {
+        if (logoAssetId != null) {
+            this.logoAssetId = logoAssetId;
+        }
     }
 }
