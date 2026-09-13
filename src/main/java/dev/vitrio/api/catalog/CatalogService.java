@@ -1,6 +1,5 @@
 package dev.vitrio.api.catalog;
 
-import dev.vitrio.api.asset.Asset;
 import dev.vitrio.api.asset.AssetRepository;
 import java.time.Instant;
 import java.util.List;
@@ -69,17 +68,12 @@ public class CatalogService {
         return toResponse(catalog);
     }
 
-    // logoAssetId já foi validado contra o mesmo catalogId em quem grava (update()) — a segunda
-    // busca aqui (por id + catalogId, não só id) é rede de segurança contra inconsistência de
-    // dado, mesmo padrão de isolamento paranoico usado em todo o domínio (ADR-0003), não uma
-    // reautorização de fato necessária no caminho feliz.
+    // logoAssetId já foi validado contra o mesmo catalogId em quem grava (update()) — a busca
+    // isolada por catalogId dentro de resolvePublicUrl aqui é rede de segurança contra
+    // inconsistência de dado, mesmo padrão de isolamento paranoico usado em todo o domínio
+    // (ADR-0003), não uma reautorização de fato necessária no caminho feliz.
     private CatalogResponse toResponse(Catalog catalog) {
-        String logoUrl = catalog.getLogoAssetId() == null
-                ? null
-                : assetRepository
-                        .findByIdAndCatalogId(catalog.getLogoAssetId(), catalog.getId())
-                        .map(Asset::getPublicUrl)
-                        .orElse(null);
+        String logoUrl = assetRepository.resolvePublicUrl(catalog.getLogoAssetId(), catalog.getId());
         return CatalogResponse.from(catalog, logoUrl);
     }
 

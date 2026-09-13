@@ -11,11 +11,17 @@ public record PublicCatalogResponse(
         String buttonColorHex,
         String instagramHandle,
         String whatsappNumber,
+        String logoUrl,
         List<PublicCategoryResponse> categories,
         List<PublicProductResponse> products) {
 
+    // logoUrl já vem resolvido de quem chama (mesmo padrão de PublicProductResponse.imageUrl,
+    // spec 007 US2) — nunca o logoAssetId bruto, e null quando o catálogo nunca definiu logo.
     static PublicCatalogResponse from(
-            Catalog catalog, List<PublicCategoryResponse> categories, List<PublicProductResponse> products) {
+            Catalog catalog,
+            String logoUrl,
+            List<PublicCategoryResponse> categories,
+            List<PublicProductResponse> products) {
         return new PublicCatalogResponse(
                 catalog.getName(),
                 CatalogColorDefaults.resolvePrimary(catalog),
@@ -25,6 +31,7 @@ public record PublicCatalogResponse(
                 catalog.getWhatsappVerificationStatus() == WhatsappVerificationStatus.VERIFIED
                         ? catalog.getWhatsappNumber()
                         : null,
+                logoUrl,
                 categories,
                 products);
     }

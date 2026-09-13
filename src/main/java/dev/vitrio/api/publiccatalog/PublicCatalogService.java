@@ -53,6 +53,8 @@ public class PublicCatalogService {
                 .map(product -> PublicProductResponse.from(product, imageUrlsByAssetId.get(product.getImageAssetId())))
                 .toList();
 
-        return PublicCatalogResponse.from(catalog, categories, products);
+        String logoUrl = assetRepository.resolvePublicUrl(catalog.getLogoAssetId(), catalog.getId());
+
+        return PublicCatalogResponse.from(catalog, logoUrl, categories, products);
     }
 }

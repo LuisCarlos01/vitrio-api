@@ -82,6 +82,8 @@ class PublicCatalogControllerTest extends AbstractProductIntegrationTest {
                 .andExpect(jsonPath("$.primaryColorHex").value("#123456"))
                 .andExpect(jsonPath("$.buttonColorHex").value("#654321"))
                 .andExpect(jsonPath("$.instagramHandle").value("boutique.publica"))
+                // Catálogo nunca definiu logo (spec 007, US2 cenário 2) — null, sem fallback.
+                .andExpect(jsonPath("$.logoUrl").isEmpty())
                 .andExpect(jsonPath("$.categories.length()").value(1))
                 .andExpect(jsonPath("$.categories[0].name").value("Semijoias"))
                 .andExpect(jsonPath("$.products.length()").value(1))
@@ -174,6 +176,31 @@ class PublicCatalogControllerTest extends AbstractProductIntegrationTest {
     void nonexistentSlugReturnsNotFound() throws Exception {
         mockMvc.perform(get("/api/v1/public/catalogs/{slug}", "slug-que-nao-existe"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void catalogWithLogoReturnsResolvedLogoUrl() throws Exception {
+        LoginResponse loginResponse = registerAndLogin("public-catalog-logo@example.com", "Str0ngP@ssw0rd!");
+        String catalogId = createCatalogAndGetId(loginResponse, "Catalogo Publico Com Logo");
+        String logoAssetId = createAssetAndGetId(loginResponse, catalogId);
+        String patchBody = mockMvc.perform(patch("/api/v1/catalogs/{id}", catalogId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginResponse.accessToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(
+                                new UpdateCatalogRequest(null, null, null, null, UUID.fromString(logoAssetId)))))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        // Compara com o logoUrl já resolvido (e coberto por teste próprio, issue #14) do lado
+        // autenticado — prova que é a mesma publicUrl final do Asset, não um valor qualquer
+        // não-nulo nem o logoAssetId bruto (spec 007, US2 cenário 1).
+        String expectedLogoUrl = jsonMapper.readValue(patchBody, CatalogResponse.class).logoUrl();
+        String slug = fetchSlug(loginResponse, catalogId);
+
+        mockMvc.perform(get("/api/v1/public/catalogs/{slug}", slug))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.logoUrl").value(expectedLogoUrl))
+                .andExpect(jsonPath("$.logoUrl").value(org.hamcrest.Matchers.not(logoAssetId)));
     }
 
     private String fetchSlug(LoginResponse loginResponse, String catalogId) throws Exception {
