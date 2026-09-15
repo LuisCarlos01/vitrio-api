@@ -53,10 +53,15 @@ jobs:
           exit-code: "1"
           limit-severities-for-sarif: true
 
-      # if: always() garante o upload mesmo quando o step acima falhou o job
-      # (exit-code: 1 já reprovou a run; isso só preserva o relatório no Security tab).
+      # if: always() garante a tentativa mesmo quando o step acima falhou o job (exit-code: 1 já
+      # reprovou a run; isso só preserva o relatório no Security tab). continue-on-error: true
+      # porque este step é só relatório/visibilidade — o gate de segurança de verdade é o
+      # exit-code do "Trivy scan" acima, que já falha a run sozinho. "Code scanning" precisa ser
+      # habilitado manualmente em Settings → Code security and analysis (não é um toggle de API);
+      # até isso ser feito, este step falha, mas não deve travar CI/deploy por causa disso.
       - name: Upload results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         if: always()
+        continue-on-error: true
         with:
           sarif_file: trivy-results.sarif
