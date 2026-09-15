@@ -47,6 +47,12 @@ public class User {
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified = false;
 
+    // Nullable de propósito, mesmo raciocínio das cores/logo do Catalog: "nunca definiu" precisa
+    // ser distinguível de qualquer valor; sem default de aplicação aqui (spec 008) — name não
+    // entra no cadastro, só é definível depois via PATCH /api/v1/users/me.
+    @Column(name = "name")
+    private String name;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -117,6 +123,18 @@ public class User {
 
     public void setEmailVerified(boolean emailVerified) {
         this.emailVerified = emailVerified;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    // null = "não veio no PATCH" (spec 008, US2 cenário 2) — validação de "não pode ser string
+    // vazia" já aconteceu na camada de DTO antes de chegar aqui.
+    public void updateName(String name) {
+        if (name != null) {
+            this.name = name;
+        }
     }
 
     public Instant getCreatedAt() {

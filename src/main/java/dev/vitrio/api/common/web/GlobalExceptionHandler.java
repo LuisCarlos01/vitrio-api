@@ -19,6 +19,7 @@ import dev.vitrio.api.product.InvalidImageAssetException;
 import dev.vitrio.api.product.ProductLimitExceededException;
 import dev.vitrio.api.product.ProductNotFoundException;
 import dev.vitrio.api.publiccatalog.PublicCatalogNotFoundException;
+import dev.vitrio.api.user.UserNotFoundException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -126,6 +127,13 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleProductLimitExceeded(ProductLimitExceededException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         problemDetail.setTitle("Product limit exceeded");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ProblemDetail handleUserNotFound(UserNotFoundException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problemDetail.setTitle("User not found");
         return problemDetail;
     }
 
