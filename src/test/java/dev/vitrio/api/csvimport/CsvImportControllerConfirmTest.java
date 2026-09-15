@@ -1,5 +1,6 @@
 package dev.vitrio.api.csvimport;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -210,6 +211,76 @@ class CsvImportControllerConfirmTest extends AbstractProductIntegrationTest {
         String csv = "nome,codigo,descricao,imagem\n" + "Colar,,Desc," + imageUrl("/valid.jpg") + "\n";
 
         performConfirm(intruder, catalogId, csv).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void catalogNeverImportedReturnsNoContentOnLatest() throws Exception {
+        LoginResponse loginResponse = registerAndLogin("csv-log-nolog@example.com", "Str0ngP@ssw0rd!");
+        String catalogId = createCatalogAndGetId(loginResponse, "Catalogo Sem Import");
+
+        mockMvc.perform(get("/api/v1/catalogs/{catalogId}/imports/latest", catalogId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginResponse.accessToken()))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void confirmingImportRecordsLogWithAcceptedAndRejectedCounts() throws Exception {
+        LoginResponse loginResponse = registerAndLogin("csv-log-counts@example.com", "Str0ngP@ssw0rd!");
+        String catalogId = createCatalogAndGetId(loginResponse, "Catalogo Log Counts");
+        String csv = "nome,codigo,descricao,imagem\n"
+                + ",SKU-LOG-BAD,Sem nome," + imageUrl("/valid.jpg") + "\n"
+                + "Colar Log Valido,SKU-LOG-OK,Desc," + imageUrl("/valid.jpg") + "\n";
+
+        performConfirm(loginResponse, catalogId, csv).andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/catalogs/{catalogId}/imports/latest", catalogId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginResponse.accessToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.catalogId").value(catalogId))
+                .andExpect(jsonPath("$.acceptedCount").value(1))
+                .andExpect(jsonPath("$.rejectedCount").value(1))
+                .andExpect(jsonPath("$.confirmedAt", org.hamcrest.Matchers.notNullValue()));
+    }
+
+    @Test
+    void allRowsRejectedStillRecordsALog() throws Exception {
+        LoginResponse loginResponse = registerAndLogin("csv-log-allrejected@example.com", "Str0ngP@ssw0rd!");
+        String catalogId = createCatalogAndGetId(loginResponse, "Catalogo Log Tudo Recusado");
+        String csv = "nome,codigo,descricao,imagem\n" + ",SKU-LOG-BAD2,Sem nome," + imageUrl("/valid.jpg") + "\n";
+
+        performConfirm(loginResponse, catalogId, csv).andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/catalogs/{catalogId}/imports/latest", catalogId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginResponse.accessToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.acceptedCount").value(0))
+                .andExpect(jsonPath("$.rejectedCount").value(1));
+    }
+
+    @Test
+    void latestReflectsTheMostRecentOfMultipleConfirmations() throws Exception {
+        LoginResponse loginResponse = registerAndLogin("csv-log-multiple@example.com", "Str0ngP@ssw0rd!");
+        String catalogId = createCatalogAndGetId(loginResponse, "Catalogo Log Multiplas");
+        performConfirm(loginResponse, catalogId, csv2("SKU-LOG-M1", imageUrl("/valid.jpg"))).andExpect(status().isOk());
+        performConfirm(loginResponse, catalogId, "nome,codigo,descricao,imagem\n" + ",SKU-LOG-M2,Sem nome," + imageUrl("/valid.jpg") + "\n")
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/catalogs/{catalogId}/imports/latest", catalogId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginResponse.accessToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.acceptedCount").value(0))
+                .andExpect(jsonPath("$.rejectedCount").value(1));
+    }
+
+    @Test
+    void latestImportOfAnotherResellerCatalogIsNotFound() throws Exception {
+        LoginResponse owner = registerAndLogin("csv-log-owner@example.com", "Str0ngP@ssw0rd!");
+        String catalogId = createCatalogAndGetId(owner, "Catalogo Log Alheio");
+        LoginResponse intruder = registerAndLogin("csv-log-intruder@example.com", "Str0ngP@ssw0rd!");
+
+        mockMvc.perform(get("/api/v1/catalogs/{catalogId}/imports/latest", catalogId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + intruder.accessToken()))
+                .andExpect(status().isNotFound());
     }
 
     private String csv2(String sku, String url) {

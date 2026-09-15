@@ -17,6 +17,7 @@ import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -29,12 +30,16 @@ import java.util.stream.Collectors;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class CsvImportService {
+
+    private static final Logger log = LoggerFactory.getLogger(CsvImportService.class);
 
     // Proteção contra arquivo abusivo (spec 006) — independente do limite de 50 produtos por
     // catálogo, que é checado linha a linha.
@@ -50,18 +55,21 @@ public class CsvImportService {
     private final ProductService productService;
     private final AssetService assetService;
     private final ImageDownloader imageDownloader;
+    private final CsvImportLogRepository csvImportLogRepository;
 
     public CsvImportService(
             CatalogRepository catalogRepository,
             ProductRepository productRepository,
             ProductService productService,
             AssetService assetService,
-            ImageDownloader imageDownloader) {
+            ImageDownloader imageDownloader,
+            CsvImportLogRepository csvImportLogRepository) {
         this.catalogRepository = catalogRepository;
         this.productRepository = productRepository;
         this.productService = productService;
         this.assetService = assetService;
         this.imageDownloader = imageDownloader;
+        this.csvImportLogRepository = csvImportLogRepository;
     }
 
     @Transactional(readOnly = true)
@@ -88,7 +96,22 @@ public class CsvImportService {
         for (CsvImportRowResult row : structuralResults) {
             results.add(confirmRow(ownerId, catalogId, row));
         }
+        recordImportLog(catalogId, results);
         return results;
+    }
+
+    // Auditoria (spec 009), não path crítico do negócio: os produtos já foram criados quando
+    // chegamos aqui, então uma falha ao persistir o log nunca deve derrubar a resposta de
+    // confirmação nem reverter o que já foi importado — só logada.
+    private void recordImportLog(UUID catalogId, List<CsvImportConfirmRowResult> results) {
+        try {
+            long acceptedCount =
+                    results.stream().filter(CsvImportConfirmRowResult::isValid).count();
+            csvImportLogRepository.saveAndFlush(new CsvImportLog(
+                    catalogId, Instant.now(), (int) acceptedCount, results.size() - (int) acceptedCount));
+        } catch (RuntimeException e) {
+            log.warn("Failed to record CSV import log for catalog {}: {}", catalogId, e.toString());
+        }
     }
 
     private CsvImportConfirmRowResult confirmRow(UUID ownerId, UUID catalogId, CsvImportRowResult row) {
