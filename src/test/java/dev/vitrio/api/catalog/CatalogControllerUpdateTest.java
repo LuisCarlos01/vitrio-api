@@ -39,7 +39,42 @@ class CatalogControllerUpdateTest extends AbstractCatalogIntegrationTest {
         performUpdate(owner, id, "{}")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.primaryColorHex").value("#6D28D9"))
-                .andExpect(jsonPath("$.buttonColorHex").value("#059669"));
+                .andExpect(jsonPath("$.buttonColorHex").value("#059669"))
+                .andExpect(jsonPath("$.hasCustomColor").value(false));
+    }
+
+    @Test
+    void settingAColorMarksItAsCustomEvenIfItMatchesThePlaceholder() throws Exception {
+        LoginResponse owner = registerAndLogin("update-catalog-customcolor@example.com", "Str0ngP@ssw0rd!");
+        String id = createCatalogAndGetId(owner, "Catalogo Cor Coincidente");
+
+        performUpdate(owner, id, "{\"primaryColorHex\":\"#6D28D9\"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hasCustomColor").value(true));
+    }
+
+    @Test
+    void resendingTheSameCustomColorKeepsHasCustomColorTrue() throws Exception {
+        LoginResponse owner = registerAndLogin("update-catalog-resendcolor@example.com", "Str0ngP@ssw0rd!");
+        String id = createCatalogAndGetId(owner, "Catalogo Cor Reenviada");
+
+        performUpdate(owner, id, "{\"primaryColorHex\":\"#ABCDEF\"}").andExpect(status().isOk());
+
+        performUpdate(owner, id, "{\"primaryColorHex\":\"#ABCDEF\"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hasCustomColor").value(true));
+    }
+
+    // hasCustomColor é somente leitura: não existe input pra ele no PATCH, só o cálculo derivado
+    // de primaryColorHex/buttonColorHex já enviados.
+    @Test
+    void hasCustomColorIsNotAcceptedAsPatchInput() throws Exception {
+        LoginResponse owner = registerAndLogin("update-catalog-readonlyflag@example.com", "Str0ngP@ssw0rd!");
+        String id = createCatalogAndGetId(owner, "Catalogo Flag Somente Leitura");
+
+        performUpdate(owner, id, "{\"hasCustomColor\":true}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hasCustomColor").value(false));
     }
 
     @Test

@@ -20,4 +20,8 @@ public final class CatalogColorDefaults {
     public static String resolveButton(Catalog catalog) {
         return catalog.getButtonColorHex() != null ? catalog.getButtonColorHex() : BUTTON_COLOR_HEX;
     }
+
+    public static boolean hasCustomColor(Catalog catalog) {
+        return catalog.getPrimaryColorHex() != null || catalog.getButtonColorHex() != null;
+    }
 }

@@ -81,6 +81,7 @@ class PublicCatalogControllerTest extends AbstractProductIntegrationTest {
                 .andExpect(jsonPath("$.name").value("Catalogo Publico 1"))
                 .andExpect(jsonPath("$.primaryColorHex").value("#123456"))
                 .andExpect(jsonPath("$.buttonColorHex").value("#654321"))
+                .andExpect(jsonPath("$.hasCustomColor").value(true))
                 .andExpect(jsonPath("$.instagramHandle").value("boutique.publica"))
                 // Catálogo nunca definiu logo (spec 007, US2 cenário 2) — null, sem fallback.
                 .andExpect(jsonPath("$.logoUrl").isEmpty())
@@ -94,6 +95,17 @@ class PublicCatalogControllerTest extends AbstractProductIntegrationTest {
                 .andExpect(jsonPath("$.products[0].imageUrl", org.hamcrest.Matchers.notNullValue()))
                 .andExpect(jsonPath("$.products[0].isOrderable").value(true))
                 .andExpect(jsonPath("$.products[0].quantityAvailable").value(5));
+    }
+
+    @Test
+    void catalogWithoutCustomColorExposesHasCustomColorFalse() throws Exception {
+        LoginResponse loginResponse = registerAndLogin("public-catalog-nocolor@example.com", "Str0ngP@ssw0rd!");
+        String catalogId = createCatalogAndGetId(loginResponse, "Catalogo Publico Sem Cor");
+        String slug = fetchSlug(loginResponse, catalogId);
+
+        mockMvc.perform(get("/api/v1/public/catalogs/{slug}", slug))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hasCustomColor").value(false));
     }
 
     @Test
