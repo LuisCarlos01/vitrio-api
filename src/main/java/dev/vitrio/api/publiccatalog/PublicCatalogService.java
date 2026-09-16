@@ -1,6 +1,5 @@
 package dev.vitrio.api.publiccatalog;
 
-import dev.vitrio.api.asset.Asset;
 import dev.vitrio.api.asset.AssetRepository;
 import dev.vitrio.api.catalog.Catalog;
 import dev.vitrio.api.catalog.CatalogRepository;
@@ -10,7 +9,6 @@ import dev.vitrio.api.product.ProductRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,10 +43,8 @@ public class PublicCatalogService {
 
         List<Product> visibleProducts =
                 productRepository.findByCatalogIdAndActiveTrueAndVisibleTrueOrderByCreatedAtDesc(catalog.getId());
-        Map<UUID, String> imageUrlsByAssetId = assetRepository
-                .findAllById(visibleProducts.stream().map(Product::getImageAssetId).distinct().toList())
-                .stream()
-                .collect(Collectors.toMap(Asset::getId, Asset::getPublicUrl));
+        Map<UUID, String> imageUrlsByAssetId =
+                assetRepository.resolvePublicUrls(visibleProducts.stream().map(Product::getImageAssetId).toList());
         List<PublicProductResponse> products = visibleProducts.stream()
                 .map(product -> PublicProductResponse.from(product, imageUrlsByAssetId.get(product.getImageAssetId())))
                 .toList();

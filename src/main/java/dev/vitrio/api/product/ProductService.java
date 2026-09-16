@@ -5,6 +5,7 @@ import dev.vitrio.api.catalog.CatalogNotFoundException;
 import dev.vitrio.api.catalog.CatalogRepository;
 import dev.vitrio.api.category.CategoryRepository;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -55,7 +56,8 @@ public class ProductService {
         Product product = new Product(
                 catalogId, request.name(), request.sku(), request.description(), request.imageAssetId(), request.categoryId());
         try {
-            return ProductResponse.from(productRepository.saveAndFlush(product));
+            Product saved = productRepository.saveAndFlush(product);
+            return ProductResponse.from(saved, assetRepository.resolvePublicUrl(saved.getImageAssetId(), catalogId));
         } catch (DataIntegrityViolationException e) {
             // Rede de segurança contra corrida de escrita concorrente: dois requests podem
             // passar pelo existsByCatalogIdAndSku acima antes de qualquer um commitar — o
@@ -96,7 +98,8 @@ public class ProductService {
                     request.isVisible(),
                     request.isOrderable(),
                     request.isActive());
-            return ProductResponse.from(productRepository.saveAndFlush(product));
+            Product saved = productRepository.saveAndFlush(product);
+            return ProductResponse.from(saved, assetRepository.resolvePublicUrl(saved.getImageAssetId(), catalogId));
         } catch (DataIntegrityViolationException e) {
             // Mesma rede de segurança de create() contra corrida de escrita concorrente no sku.
             throw new DuplicateSkuException();
@@ -115,15 +118,19 @@ public class ProductService {
     @Transactional(readOnly = true)
     public List<ProductResponse> listByCatalog(UUID ownerId, UUID catalogId) {
         requireOwnedCatalog(ownerId, catalogId);
-        return productRepository.findByCatalogIdOrderByCreatedAtDesc(catalogId).stream()
-                .map(ProductResponse::from)
+        List<Product> products = productRepository.findByCatalogIdOrderByCreatedAtDesc(catalogId);
+        Map<UUID, String> imageUrlsByAssetId =
+                assetRepository.resolvePublicUrls(products.stream().map(Product::getImageAssetId).toList());
+        return products.stream()
+                .map(product -> ProductResponse.from(product, imageUrlsByAssetId.get(product.getImageAssetId())))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public ProductResponse getOne(UUID ownerId, UUID catalogId, UUID id) {
         requireOwnedCatalog(ownerId, catalogId);
-        return ProductResponse.from(findInCatalogOrThrow(catalogId, id));
+        Product product = findInCatalogOrThrow(catalogId, id);
+        return ProductResponse.from(product, assetRepository.resolvePublicUrl(product.getImageAssetId(), catalogId));
     }
 
     // Isolamento (ADR-0003): "catálogo não existe" e "catálogo não é meu" viram a mesma

@@ -41,12 +41,17 @@ public abstract class AbstractCatalogIntegrationTest extends AbstractAuthIntegra
 
     /** Envia uma imagem JPEG mínima válida pro catálogo e devolve o id do {@code Asset} gerado. */
     protected String createAssetAndGetId(LoginResponse loginResponse, String catalogId) throws Exception {
+        return createAsset(loginResponse, catalogId).id().toString();
+    }
+
+    /** Mesmo que {@link #createAssetAndGetId}, para testes que também precisam do {@code publicUrl}. */
+    protected AssetResponse createAsset(LoginResponse loginResponse, String catalogId) throws Exception {
         String body = mockMvc.perform(multipart("/api/v1/catalogs/{catalogId}/assets", catalogId)
                         .file(new MockMultipartFile("file", "photo.jpg", "image/jpeg", JPEG_BYTES))
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginResponse.accessToken()))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
-        return jsonMapper.readValue(body, AssetResponse.class).id().toString();
+        return jsonMapper.readValue(body, AssetResponse.class);
     }
 }

@@ -9,7 +9,7 @@ public record ProductResponse(
         String name,
         String sku,
         String description,
-        UUID imageAssetId,
+        String imageUrl,
         UUID categoryId,
         int quantityAvailable,
         boolean isVisible,
@@ -17,14 +17,17 @@ public record ProductResponse(
         boolean isActive,
         Instant createdAt) {
 
-    static ProductResponse from(Product product) {
+    // imageUrl (nunca imageAssetId bruto) é resolvido fora daqui, não a partir do próprio
+    // Product — mesmo padrão de CatalogResponse.logoUrl (spec 007): o dashboard precisa
+    // reexibir a foto de um produto já existente sem o publicUrl original do upload (spec 011).
+    static ProductResponse from(Product product, String imageUrl) {
         return new ProductResponse(
                 product.getId(),
                 product.getCatalogId(),
                 product.getName(),
                 product.getSku(),
                 product.getDescription(),
-                product.getImageAssetId(),
+                imageUrl,
                 product.getCategoryId(),
                 product.getQuantityAvailable(),
                 product.isVisible(),

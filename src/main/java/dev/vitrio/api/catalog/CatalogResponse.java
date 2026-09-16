@@ -18,8 +18,9 @@ public record CatalogResponse(
         Instant createdAt) {
 
     // logoUrl (nunca logoAssetId bruto) é resolvido fora daqui, não a partir do próprio Catalog —
-    // diferente de Product/ProductResponse (que expõe imageAssetId bruto), porque o dashboard
-    // precisa reexibir o logo atual sem outro endpoint pra resolver asset->URL (spec 007).
+    // mesmo padrão hoje usado por ProductResponse.imageUrl (spec 011), que revogou a divergência
+    // original entre os dois (spec 007) pelo mesmo motivo: reexibir a foto/logo de um recurso já
+    // existente sem outro endpoint pra resolver asset->URL.
     static CatalogResponse from(Catalog catalog, String logoUrl) {
         return new CatalogResponse(
                 catalog.getId(),

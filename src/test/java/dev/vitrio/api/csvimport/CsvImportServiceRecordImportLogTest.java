@@ -73,7 +73,7 @@ class CsvImportServiceRecordImportLogTest {
                 .thenReturn(new AssetResponse(UUID.randomUUID(), catalogId, "image/jpeg", 3L, "http://s3/asset.jpg", Instant.now()));
         when(productService.create(any(), any(), any(CreateProductRequest.class)))
                 .thenReturn(new ProductResponse(
-                        productId, catalogId, "Colar", "SKU-1", "Desc", UUID.randomUUID(), null, 0, false, false, true, Instant.now()));
+                        productId, catalogId, "Colar", "SKU-1", "Desc", "http://s3/asset.jpg", null, 0, false, false, true, Instant.now()));
         // A falha real que este teste prova ser inofensiva: persistir o log explode.
         when(csvImportLogRepository.saveAndFlush(any())).thenThrow(new RuntimeException("db indisponível"));
 

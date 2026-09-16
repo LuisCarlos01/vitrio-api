@@ -4,6 +4,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import dev.vitrio.api.asset.AssetResponse;
 import dev.vitrio.api.auth.LoginResponse;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeAll;
@@ -55,12 +56,12 @@ class ProductControllerCreateTest extends AbstractProductIntegrationTest {
     void createsProductWithConservativeDefaults() throws Exception {
         LoginResponse loginResponse = registerAndLogin("create-product-1@example.com", "Str0ngP@ssw0rd!");
         String catalogId = createCatalogAndGetId(loginResponse, "Catalogo Produto 1");
-        String assetId = createAssetAndGetId(loginResponse, catalogId);
+        AssetResponse asset = createAsset(loginResponse, catalogId);
 
-        performCreate(loginResponse, catalogId, new CreateProductRequest("Colar Dourado", null, null, UUID.fromString(assetId), null))
+        performCreate(loginResponse, catalogId, new CreateProductRequest("Colar Dourado", null, null, asset.id(), null))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("Colar Dourado"))
-                .andExpect(jsonPath("$.imageAssetId").value(assetId))
+                .andExpect(jsonPath("$.imageUrl").value(asset.publicUrl()))
                 .andExpect(jsonPath("$.categoryId").doesNotExist())
                 .andExpect(jsonPath("$.quantityAvailable").value(0))
                 .andExpect(jsonPath("$.isVisible").value(false))

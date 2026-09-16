@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import dev.vitrio.api.asset.AssetResponse;
 import dev.vitrio.api.auth.LoginResponse;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeAll;
@@ -108,13 +109,50 @@ class ProductControllerReadTest extends AbstractProductIntegrationTest {
     void getsSingleProductByIdWithinCatalog() throws Exception {
         LoginResponse loginResponse = registerAndLogin("read-product-3@example.com", "Str0ngP@ssw0rd!");
         String catalogId = createCatalogAndGetId(loginResponse, "Catalogo Leitura 3");
-        String assetId = createAssetAndGetId(loginResponse, catalogId);
-        String productId = createProduct(loginResponse, catalogId, "Produto Unico", assetId);
+        AssetResponse asset = createAsset(loginResponse, catalogId);
+        String productId = createProduct(loginResponse, catalogId, "Produto Unico", asset.id().toString());
 
         mockMvc.perform(get("/api/v1/catalogs/{catalogId}/products/{id}", catalogId, productId)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginResponse.accessToken()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Produto Unico"));
+                .andExpect(jsonPath("$.name").value("Produto Unico"))
+                .andExpect(jsonPath("$.imageUrl").value(asset.publicUrl()));
+    }
+
+    // Prova a resolução em lote na listagem (spec 011, US1 cenário 1): cada produto retorna a
+    // imageUrl do seu próprio asset, não a de outro nem null por engano num agrupamento errado.
+    @Test
+    void listingResolvesImageUrlPerProduct() throws Exception {
+        LoginResponse loginResponse = registerAndLogin("read-product-6@example.com", "Str0ngP@ssw0rd!");
+        String catalogId = createCatalogAndGetId(loginResponse, "Catalogo Leitura 6");
+        AssetResponse assetA = createAsset(loginResponse, catalogId);
+        AssetResponse assetB = createAsset(loginResponse, catalogId);
+        String productA = createProduct(loginResponse, catalogId, "Produto A", assetA.id().toString());
+        String productB = createProduct(loginResponse, catalogId, "Produto B", assetB.id().toString());
+
+        mockMvc.perform(get("/api/v1/catalogs/{catalogId}/products", catalogId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginResponse.accessToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id=='" + productA + "')].imageUrl").value(assetA.publicUrl()))
+                .andExpect(jsonPath("$[?(@.id=='" + productB + "')].imageUrl").value(assetB.publicUrl()));
+    }
+
+    // Prova que a resposta reflete o asset atual, não o anterior, depois de um PATCH de imagem
+    // (spec 011, US1 cenário 3).
+    @Test
+    void updatingImageAssetIdChangesTheResolvedImageUrl() throws Exception {
+        LoginResponse loginResponse = registerAndLogin("read-product-7@example.com", "Str0ngP@ssw0rd!");
+        String catalogId = createCatalogAndGetId(loginResponse, "Catalogo Leitura 7");
+        AssetResponse originalAsset = createAsset(loginResponse, catalogId);
+        AssetResponse newAsset = createAsset(loginResponse, catalogId);
+        String productId = createProduct(loginResponse, catalogId, "Produto Trocado", originalAsset.id().toString());
+
+        mockMvc.perform(patch("/api/v1/catalogs/{catalogId}/products/{id}", catalogId, productId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginResponse.accessToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"imageAssetId\": \"" + newAsset.id() + "\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.imageUrl").value(newAsset.publicUrl()));
     }
 
     @Test

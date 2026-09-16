@@ -1,7 +1,10 @@
 package dev.vitrio.api.asset;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AssetRepository extends JpaRepository<Asset, UUID> {
@@ -20,5 +23,14 @@ public interface AssetRepository extends JpaRepository<Asset, UUID> {
             return null;
         }
         return findByIdAndCatalogId(assetId, catalogId).map(Asset::getPublicUrl).orElse(null);
+    }
+
+    // Extraído de PublicCatalogService/ProductService (spec 011) — resolução em lote pra evitar
+    // N+1 ao listar vários recursos com asset próprio de uma vez. Sem filtro por catalogId (ao
+    // contrário de resolvePublicUrl): quem chama já restringiu os assetIds a um catálogo só, ao
+    // montar a lista de origem.
+    default Map<UUID, String> resolvePublicUrls(List<UUID> assetIds) {
+        return findAllById(assetIds.stream().distinct().toList()).stream()
+                .collect(Collectors.toMap(Asset::getId, Asset::getPublicUrl));
     }
 }
