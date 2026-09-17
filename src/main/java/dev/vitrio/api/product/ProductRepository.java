@@ -23,4 +23,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     // Usado no PATCH (US3): um produto não colide consigo mesmo ao manter o próprio sku.
     boolean existsByCatalogIdAndSkuAndIdNot(UUID catalogId, String sku, UUID id);
+
+    // Checagem de uso antes de excluir um Asset (spec 012) — qualquer produto que ainda
+    // referencie o id, de qualquer catálogo, bloqueia a exclusão.
+    boolean existsByImageAssetId(UUID imageAssetId);
 }

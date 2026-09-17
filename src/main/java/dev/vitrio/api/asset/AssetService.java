@@ -2,6 +2,7 @@ package dev.vitrio.api.asset;
 
 import dev.vitrio.api.catalog.CatalogNotFoundException;
 import dev.vitrio.api.catalog.CatalogRepository;
+import dev.vitrio.api.product.ProductRepository;
 import java.io.IOException;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -18,11 +19,17 @@ public class AssetService {
     private final CatalogRepository catalogRepository;
     private final AssetRepository assetRepository;
     private final AssetStorage assetStorage;
+    private final ProductRepository productRepository;
 
-    public AssetService(CatalogRepository catalogRepository, AssetRepository assetRepository, AssetStorage assetStorage) {
+    public AssetService(
+            CatalogRepository catalogRepository,
+            AssetRepository assetRepository,
+            AssetStorage assetStorage,
+            ProductRepository productRepository) {
         this.catalogRepository = catalogRepository;
         this.assetRepository = assetRepository;
         this.assetStorage = assetStorage;
+        this.productRepository = productRepository;
     }
 
     @Transactional
@@ -66,5 +73,22 @@ public class AssetService {
 
         Asset asset = new Asset(assetId, catalogId, storageKey, format.contentType(), content.length, publicUrl);
         return AssetResponse.from(assetRepository.saveAndFlush(asset));
+    }
+
+    @Transactional
+    public void delete(UUID ownerId, UUID catalogId, UUID id) {
+        catalogRepository.findByIdAndOwnerId(catalogId, ownerId).orElseThrow(CatalogNotFoundException::new);
+        Asset asset = assetRepository.findByIdAndCatalogId(id, catalogId).orElseThrow(AssetNotFoundException::new);
+
+        // Tudo-ou-nada (spec 012): checa uso antes de tocar em S3 ou banco — nunca deveria ser
+        // possível derrubar a imagem de um produto/loja já existente por engano.
+        if (productRepository.existsByImageAssetId(id) || catalogRepository.existsByLogoAssetId(id)) {
+            throw new AssetInUseException();
+        }
+
+        // S3 primeiro: se falhar, a transação não chega a remover o registro do banco — evita um
+        // Asset com registro no banco mas sem objeto no S3 (publicUrl quebrada).
+        assetStorage.delete(asset.getStorageKey());
+        assetRepository.delete(asset);
     }
 }

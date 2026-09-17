@@ -1,5 +1,7 @@
 package dev.vitrio.api.common.web;
 
+import dev.vitrio.api.asset.AssetInUseException;
+import dev.vitrio.api.asset.AssetNotFoundException;
 import dev.vitrio.api.asset.AssetReadException;
 import dev.vitrio.api.asset.FileTooLargeException;
 import dev.vitrio.api.asset.UnsupportedImageFormatException;
@@ -169,6 +171,20 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleAssetReadFailure(AssetReadException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         problemDetail.setTitle("Could not read uploaded file");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(AssetNotFoundException.class)
+    public ProblemDetail handleAssetNotFound(AssetNotFoundException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problemDetail.setTitle("Asset not found");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(AssetInUseException.class)
+    public ProblemDetail handleAssetInUse(AssetInUseException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problemDetail.setTitle("Asset in use");
         return problemDetail;
     }
 

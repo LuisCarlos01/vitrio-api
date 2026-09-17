@@ -18,4 +18,8 @@ public interface CatalogRepository extends JpaRepository<Catalog, UUID> {
     // Isolamento entre revendedoras (ADR-0003): a query já filtra por owner, então "não existe"
     // e "existe mas não é meu" são indistinguíveis pelo chamador — a base do 404 genérico da US4.
     Optional<Catalog> findByIdAndOwnerId(UUID id, UUID ownerId);
+
+    // Checagem de uso antes de excluir um Asset (spec 012) — qualquer catálogo que ainda use o
+    // id como logo, de qualquer dono, bloqueia a exclusão.
+    boolean existsByLogoAssetId(UUID logoAssetId);
 }

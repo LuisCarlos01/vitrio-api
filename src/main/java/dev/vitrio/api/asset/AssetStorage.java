@@ -9,4 +9,7 @@ interface AssetStorage {
 
     /** Envia o conteúdo e devolve a URL pública de leitura do objeto gravado em {@code storageKey}. */
     String upload(String storageKey, byte[] content, String contentType);
+
+    /** Remove o objeto gravado em {@code storageKey} (spec 012). */
+    void delete(String storageKey);
 }

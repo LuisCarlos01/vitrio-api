@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Component
@@ -28,5 +29,10 @@ class S3AssetStorage implements AssetStorage {
         // Leitura pública é responsabilidade da bucket policy (spec 003), não de ACL por
         // objeto — o path gerado pelo sistema (não-adivinhável) é a proteção real.
         return s3Client.utilities().getUrl(builder -> builder.bucket(bucketName).key(storageKey)).toString();
+    }
+
+    @Override
+    public void delete(String storageKey) {
+        s3Client.deleteObject(DeleteObjectRequest.builder().bucket(bucketName).key(storageKey).build());
     }
 }
