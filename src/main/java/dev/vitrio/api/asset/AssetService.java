@@ -20,16 +20,19 @@ public class AssetService {
     private final AssetRepository assetRepository;
     private final AssetStorage assetStorage;
     private final ProductRepository productRepository;
+    private final ImageOptimizer imageOptimizer;
 
     public AssetService(
             CatalogRepository catalogRepository,
             AssetRepository assetRepository,
             AssetStorage assetStorage,
-            ProductRepository productRepository) {
+            ProductRepository productRepository,
+            ImageOptimizer imageOptimizer) {
         this.catalogRepository = catalogRepository;
         this.assetRepository = assetRepository;
         this.assetStorage = assetStorage;
         this.productRepository = productRepository;
+        this.imageOptimizer = imageOptimizer;
     }
 
     @Transactional
@@ -63,15 +66,18 @@ public class AssetService {
         }
 
         ImageFormat format = ImageFormat.detect(content).orElseThrow(UnsupportedImageFormatException::new);
+        // Redimensiona/recomprime antes de salvar (spec 013) — o que chega no S3 e é persistido
+        // em Asset.byteSize já é o otimizado, nunca o original recebido do cliente.
+        byte[] optimizedContent = imageOptimizer.optimize(content, format);
 
         // Id gerado aqui, não pelo banco (Asset não usa @GeneratedValue): precisa existir
         // antes do save pra compor o storageKey no formato exigido pela spec 003
         // ("{catalogId}/{assetId}.{extensão}").
         UUID assetId = UUID.randomUUID();
         String storageKey = catalogId + "/" + assetId + format.extension();
-        String publicUrl = assetStorage.upload(storageKey, content, format.contentType());
+        String publicUrl = assetStorage.upload(storageKey, optimizedContent, format.contentType());
 
-        Asset asset = new Asset(assetId, catalogId, storageKey, format.contentType(), content.length, publicUrl);
+        Asset asset = new Asset(assetId, catalogId, storageKey, format.contentType(), optimizedContent.length, publicUrl);
         return AssetResponse.from(assetRepository.saveAndFlush(asset));
     }
 

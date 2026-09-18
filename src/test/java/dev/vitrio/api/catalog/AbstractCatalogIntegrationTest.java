@@ -6,6 +6,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import dev.vitrio.api.asset.AssetResponse;
 import dev.vitrio.api.auth.AbstractAuthIntegrationTest;
 import dev.vitrio.api.auth.LoginResponse;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import javax.imageio.ImageIO;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -19,8 +26,25 @@ import org.springframework.mock.web.MockMultipartFile;
  */
 public abstract class AbstractCatalogIntegrationTest extends AbstractAuthIntegrationTest {
 
-    private static final byte[] JPEG_BYTES =
-            new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0, 0, 0, 0, 0, 0};
+    // JPEG de verdade, decodificável por ImageIO — não só o magic byte. Desde a spec 013,
+    // AssetService decodifica o conteúdo de verdade pra redimensionar/recomprimir, então um
+    // fixture com só o cabeçalho falha no upload (ImageIO.read retorna null).
+    private static final byte[] JPEG_BYTES = encodeJpeg();
+
+    private static byte[] encodeJpeg() {
+        BufferedImage image = new BufferedImage(10, 10, BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = image.createGraphics();
+        graphics.setColor(Color.BLUE);
+        graphics.fillRect(0, 0, 10, 10);
+        graphics.dispose();
+        try {
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            ImageIO.write(image, "jpg", output);
+            return output.toByteArray();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
 
     /** Cria um catálogo via API e devolve o id gerado, pra testes que precisam de um catálogo existente. */
     protected String createCatalogAndGetId(LoginResponse loginResponse, String name) throws Exception {

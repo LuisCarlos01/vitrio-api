@@ -66,7 +66,9 @@ class AssetControllerUploadTest extends AbstractCatalogIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.catalogId").value(catalogId))
                 .andExpect(jsonPath("$.contentType").value("image/jpeg"))
-                .andExpect(jsonPath("$.byteSize").value(ImageFixtures.JPEG_BYTES.length))
+                // byteSize reflete o arquivo já otimizado (spec 013), não necessariamente igual
+                // ao tamanho do upload original — só prova que o campo é populado com algo real.
+                .andExpect(jsonPath("$.byteSize").value(org.hamcrest.Matchers.greaterThan(0)))
                 .andExpect(jsonPath("$.publicUrl").value(org.hamcrest.Matchers.containsString(BUCKET_NAME)));
     }
 
@@ -97,7 +99,12 @@ class AssetControllerUploadTest extends AbstractCatalogIntegrationTest {
                         HttpResponse.BodyHandlers.ofByteArray());
 
         org.junit.jupiter.api.Assertions.assertEquals(200, response.statusCode());
-        org.junit.jupiter.api.Assertions.assertArrayEquals(ImageFixtures.JPEG_BYTES, response.body());
+        // Não compara bytes brutos: a imagem salva já passou pela recompressão de qualidade
+        // (spec 013), então os bytes divergem do upload original mesmo sem redimensionar —
+        // decodifica e confere que ainda é a mesma imagem (dimensão preservada, 50x50).
+        java.awt.image.BufferedImage decoded = javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(response.body()));
+        org.junit.jupiter.api.Assertions.assertEquals(50, decoded.getWidth());
+        org.junit.jupiter.api.Assertions.assertEquals(50, decoded.getHeight());
     }
 
     @Test

@@ -35,6 +35,11 @@ vitrio:
       region: ${AWS_S3_REGION}
       access-key-id: ${AWS_S3_ACCESS_KEY_ID}
       secret-access-key: ${AWS_S3_SECRET_ACCESS_KEY}
+  asset:
+    # Redimensionamento/compressão de imagem no upload (spec 013) — configurável sem novo
+    # deploy de lógica, ajustável conforme o uso real se 1600px/0.82 se mostrarem errados.
+    max-dimension-px: ${VITRIO_ASSET_MAX_DIMENSION_PX:1600}
+    jpeg-quality: ${VITRIO_ASSET_JPEG_QUALITY:0.82}
   jwt:
     # Chave de assinatura HS256 do Access token — sempre via variável de ambiente,
     # nunca hardcoded nem commitada (ver .env.example para o default de desenvolvimento).

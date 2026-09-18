@@ -10,13 +10,19 @@ import dev.vitrio.api.auth.LoginResponse;
 import dev.vitrio.api.product.AbstractProductIntegrationTest;
 import dev.vitrio.api.product.Product;
 import dev.vitrio.api.product.ProductRepository;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.concurrent.Executors;
+import javax.imageio.ImageIO;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -54,8 +60,24 @@ class CsvImportControllerConfirmTest extends AbstractProductIntegrationTest {
 
     private static final String BUCKET_NAME = "vitrio-test-bucket-csv-confirm";
 
-    private static final byte[] JPEG_BYTES =
-            new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0, 0, 0, 0, 0, 0};
+    // JPEG de verdade, decodificável por ImageIO — não só o magic byte (spec 013: AssetService
+    // decodifica o conteúdo de verdade pra redimensionar/recomprimir).
+    private static final byte[] JPEG_BYTES = encodeJpeg();
+
+    private static byte[] encodeJpeg() {
+        BufferedImage image = new BufferedImage(10, 10, BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = image.createGraphics();
+        graphics.setColor(Color.BLUE);
+        graphics.fillRect(0, 0, 10, 10);
+        graphics.dispose();
+        try {
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            ImageIO.write(image, "jpg", output);
+            return output.toByteArray();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
 
     private static HttpServer imageServer;
 
